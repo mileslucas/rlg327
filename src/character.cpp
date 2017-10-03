@@ -13,8 +13,6 @@ Character::Character()
 
 	poison = 0;
 	frozen = 0;
-
-	dam = NULL;
 }
 
 Character::~Character()
@@ -40,8 +38,6 @@ void Character::setLocation(int x, int y)
 
 int Character::getTotalDam()
 {
-	if (!dam)
-		return 10;
 	return dam->roll();
 }
 
@@ -52,7 +48,10 @@ int Character::getTotalDef()
 
 int Character::getColor()
 {
-	if (frozen) return COLOR_FROZEN;
-	if (poison) return COLOR_POISON;
+	if (frozen)
+		return COLOR_FROZEN;
+	if (poison)
+		return COLOR_POISON;
 	return color;
 }
+

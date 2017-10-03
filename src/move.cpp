@@ -22,9 +22,9 @@ Character *scv[BUFFER_SIZE];
 
 static int dist(int x1, int y1, int x2, int y2)
 {
-	int dx = ABS((x1-x2));
-	int dy = ABS((y1-y2));
-	return MAX(dx, dy); 
+	int dx = ABS((x1 - x2));
+	int dy = ABS((y1 - y2));
+	return MAX(dx, dy);
 }
 
 /* scan the area centered at (x, y) then store the result in scv */
@@ -32,16 +32,16 @@ static int scanArea(int x, int y, int radius)
 {
 	scc = 0;
 
-	for (int r=y-radius; r<=y+radius; r++) {
-		for (int c=x-radius; c<=x+radius; c++) {
+	for (int r = y - radius; r <= y + radius; r++) {
+		for (int c = x - radius; c <= x + radius; c++) {
 			int pcx, pcy;
 			pc->getLocation(&pcx, &pcy);
 
-			if (c==pcx && r==pcy)
+			if (c == pcx && r == pcy)
 				continue;
-			if (r<=0 || r>=DUNG_H - 1)
+			if (r <= 0 || r >= DUNG_H - 1)
 				continue;
-			if (c<=0 || c>=DUNG_W - 1)
+			if (c <= 0 || c >= DUNG_W - 1)
 				continue;
 			if (dungeon->cmap[r][c])
 				scv[scc++] = dungeon->cmap[r][c];
@@ -54,12 +54,12 @@ static int scanArea(int x, int y, int radius)
 static void getRandEmptyNeighbor(int *nx, int *ny, int x, int y)
 {
 	vector<Point> ns;
-	for (int r=y-1; r<=y+1; r++) {
-		for (int c=x-1; c<=x+1; c++) {
-			if (r>=0 && r<DUNG_H &&
-				c>=0 && c<DUNG_W &&
-				dungeon->hmap[r][c] == 0 &&
-				dungeon->cmap[r][c] == NULL) {
+	for (int r = y - 1; r <= y + 1; r++) {
+		for (int c = x - 1; c <= x + 1; c++) {
+			if (r >= 0 && r < DUNG_H &&
+			        c >= 0 && c < DUNG_W &&
+			        dungeon->hmap[r][c] == 0 &&
+			        dungeon->cmap[r][c] == NULL) {
 				Point p(c, r);
 				ns.push_back(p);
 			}
@@ -79,10 +79,10 @@ static void swapCharacter(Character *a, Character *b)
 {
 	int ax, ay;
 	a->getLocation(&ax, &ay);
-	
+
 	int bx, by;
 	b->getLocation(&bx, &by);
-	
+
 	a->setLocation(bx, by);
 	b->setLocation(ax, ay);
 
@@ -94,9 +94,9 @@ static void swapCharacter(Character *a, Character *b)
 static void update(Character *c, int x, int y)
 {
 	// no move
-	if (c->getX()==x && c->getY()==y)
+	if (c->getX() == x && c->getY() == y)
 		return;
-	
+
 	if (dungeon->hmap[y][x]) {
 		if (dungeon->hmap[y][x] > 85) {
 			// failed to tunnel
@@ -108,11 +108,11 @@ static void update(Character *c, int x, int y)
 			dungeon->tmap[y][x] = '#';
 		}
 	}
-	
-	// update what PC is currently attacking (can be NULL) 
+
+	// update what PC is currently attacking (can be NULL)
 	if (c->isPC())
 		pc->attacking = (NPC *)dungeon->cmap[y][x];
-	
+
 	if (dungeon->cmap[y][x]) {
 		// attack
 		if (c->isPC() || dungeon->cmap[y][x]->isPC()) {
@@ -120,7 +120,7 @@ static void update(Character *c, int x, int y)
 			int dam = c->getTotalDam() - dungeon->cmap[y][x]->getTotalDef();
 
 			if (dam < 0) dam = 0;
-					
+
 			if (dungeon->cmap[y][x]->hp > dam) {
 				// failed to kill
 				dungeon->cmap[y][x]->hp -= dam;
@@ -134,27 +134,27 @@ static void update(Character *c, int x, int y)
 			// displace targeted monster
 			int nx, ny;
 			getRandEmptyNeighbor(&nx, &ny, x, y);
-			
-			if (nx==0 && ny==0) {
+
+			if (nx == 0 && ny == 0) {
 				// no empty neighbor then swap
 				swapCharacter(c, dungeon->cmap[y][x]);
 				return;
 			} else {
 				// move target to (nx, ny)
-				update(dungeon->cmap[y][x], nx, ny);		
+				update(dungeon->cmap[y][x], nx, ny);
 			}
 		}
 	}
-	
+
 	int cx, cy;
 	c->getLocation(&cx, &cy);
-	
+
 	// clear old location
 	dungeon->cmap[cy][cx] = NULL;
-	
+
 	// go to new location
 	c->setLocation(x, y);
-	
+
 	// original character that occupies (x, y)
 	Character *co = dungeon->cmap[y][x];
 	if (co) {
@@ -165,20 +165,33 @@ static void update(Character *c, int x, int y)
 			co->setDead();
 		}
 	}
-	
+
 	dungeon->cmap[y][x] = c;
+
+	// if there is an item to pick at its new location
+	if (c->isPC() && dungeon->imap[y][x]) {
+		// TODO PC should pick up this item if inventory is not full
+		if (pc->inventory.size() < MAX_INV) {
+			Debug::log("Picked up item %c\t", dungeon->imap[y][x]->symb);
+			pc->inventory.push_back(dungeon->imap[y][x]);
+			Debug::log("Inventory size: %d\n", pc->inventory.size());
+			// Remove item from floor
+			dungeon->imap[y][x] = 0;
+		}
+
+	}
 }
 
 // escape algorithm for PC
 static void escape()
 {
-	// look for optimal escape	
-	int x, y, escx = 0, escy = 0, min = 1<<8;
+	// look for optimal escape
+	int x, y, escx = 0, escy = 0, min = 1 << 8;
 	int pcx, pcy;
 	pc->getLocation(&pcx, &pcy);
-	
-	for (x = pcx-1; x <= pcx+1; x++) {
-		for (y = pcy-1; y <= pcy+1; y++) {
+
+	for (x = pcx - 1; x <= pcx + 1; x++) {
+		for (y = pcy - 1; y <= pcy + 1; y++) {
 			if (x == pcx && y == pcy)
 				continue; // skip myself
 			if (dungeon->hmap[y][x])
@@ -201,7 +214,7 @@ static void escape()
 }
 
 int Move::npc(NPC *c)
-{	
+{
 	int abil = c->getAbil();
 	int cx, cy, mempcx, mempcy;
 
@@ -233,7 +246,7 @@ int Move::npc(NPC *c)
 			Move::random(c, tunnel);
 		}
 	} else if (tele) {
-		Move::toward(c, pcx, pcy, tunnel); 
+		Move::toward(c, pcx, pcy, tunnel);
 	} else {
 		Move::random(c, tunnel);
 	}
@@ -245,17 +258,17 @@ int Move::pcAI()
 	if (dungeon->nummon() <= 0) {
 		return 0; // game over
 	}
-	
+
 	int npcx, npcy;
 	dungeon->npcv[0]->getLocation(&npcx, &npcy);
-	
+
 	if (cheat) {
 		Dijkstra::run(npcx, npcy, 0);
 		Move::dijkstra(pc, 0);
 	} else {
 		// PC move algorithm
 		scanArea(pcx, pcy, 3);
- 
+
 		if (scc == 0) {
 			// look for monsters if no monsters are around
 			Dijkstra::run(npcx, npcy, 0);
@@ -267,13 +280,13 @@ int Move::pcAI()
 			m->getLocation(&mx, &my);
 
 			int speed = m->getSpeed();
-			int tpm = 100/speed; // turns per move
+			int tpm = 100 / speed; // turns per move
 			int mvs = 0; // number of moves my enemy will take to reach me
 			int mturn = m->getTurn();
 			int pcturn = pc->getTurn();
-			for (;pcturn - 100/pc->getSpeed() <= mturn 
-					&& mturn < pcturn; mturn+=tpm, mvs++);	
-			int x, y, optx = 0, opty = 0, d = 1<<10;
+			for (; pcturn - 100 / pc->getSpeed() <= mturn
+			        && mturn < pcturn; mturn += tpm, mvs++);
+			int x, y, optx = 0, opty = 0, d = 1 << 10;
 			for (x = pcx - 1; x <= pcx + 1; x++) {
 				for (y = pcy - 1; y <= pcy + 1; y++) {
 					if (x == pcx && y == pcy)
@@ -323,8 +336,8 @@ int Move::move(Character *c, int x, int y)
 		return 1;
 
 	Debug::log("move %c to (%d, %d)\n",
-	c->getSymb(), x, y);
-			
+	           c->getSymb(), x, y);
+
 	update(c, x, y);
 
 	if (c->isPC()) {
@@ -341,43 +354,43 @@ int Move::move(Character *c, int x, int y)
 int Move::dijkstra(Character *c, int t)
 {
 	Point next = Dijkstra::next(c->getX(), c->getY(), t);
-	
+
 	update(c, next.x, next.y);
 
 	return 0;
 }
 
 int Move::random(Character *c, int t)
-{	
+{
 	int x, y;
-	
+
 	while (1) {
 		int r = rand() % 8;
 
 		c->getLocation(&x, &y);
 
 		switch (r) {
-			case 0: x++; break;
-			case 1: x--; break;
-			case 2: y++; break;
-			case 3: y--; break;
-			case 4: x++; y++; break;
-			case 5: x--; y++; break;
-			case 6: x++; y--; break;
-			case 7: x--; y--; break;
+		case 0: x++; break;
+		case 1: x--; break;
+		case 2: y++; break;
+		case 3: y--; break;
+		case 4: x++; y++; break;
+		case 5: x--; y++; break;
+		case 6: x++; y--; break;
+		case 7: x--; y--; break;
 		}
 
 		// either tunneling or find a open space
-		if ((t && dungeon->hmap[y][x]!=IMMUTABLE) || 
-				(!dungeon->hmap[y][x])) {
+		if ((t && dungeon->hmap[y][x] != IMMUTABLE) ||
+		        (!dungeon->hmap[y][x])) {
 			break;
 		} else {
-			r = rand() % 8;	
+			r = rand() % 8;
 		}
 	}
 
 	update(c, x, y);
-		
+
 	return 0;
 }
 
@@ -395,14 +408,14 @@ int Move::toward(Character *c, int x, int y, int t)
 	if (dx < 0) incx = -1;
 	if (dy > 0) incy =  1;
 	if (dy < 0) incy = -1;
-	
+
 	int nextx = cx + incx;
 	int nexty = cy + incy;
-	
+
 	if (t || !dungeon->hmap[nexty][nextx])
 		update(c, nextx, nexty);
 	else
 		Move::random(c, t); // get stuck
-	
+
 	return 0;
 }

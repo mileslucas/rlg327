@@ -7,9 +7,8 @@
 
 NPC::NPC() : Character()
 {
-	speed = rand() % 16 + 5;
-	abil  = rand() % 16;
-	hp    = hpmaxNaked = rand() % 16 + 60;
+	abil = rand() % 16;
+	speed = 5 + rand() % 16;
 
 	// get symbol
 	char symb[2];
@@ -30,16 +29,27 @@ NPC::NPC() : Character()
 		color = COLOR_MAGENTA;
 }
 
-NPC::NPC(int speed, int hp, Dice *dam, char symb, int color, int abil, string name, string desc)
+NPC::NPC(
+string &name , 
+string &desc , 
+char    symb ,
+int     color, 
+int     speed, 
+int     abil , 
+int     hp   , 
+Dice *dam)
 {
-	this->speed = speed;
-	this->hp    = this->hpmaxNaked = hp;
-	this->dam   = dam;
-	this->symb  = symb;
-	this->color = color;
-	this->abil  = abil;
 	this->name  = name;
 	this->desc  = desc;
+	this->symb  = symb;
+	this->color = color;
+	this->speed = speed;
+	this->abil  = abil;
+	this->hp    = this->hpmaxNaked = hp;
+	this->dam   = dam;
+
+	mempcx = 0;
+	mempcy = 0;
 }
 
 NPC::~NPC()

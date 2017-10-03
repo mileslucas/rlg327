@@ -3,7 +3,7 @@
 
 #define ROCK ' '
 #define ROOM '.'
-#define CORR '#' 
+#define CORR '#'
 #define STAIR_DN '>'
 #define STAIR_UP '<'
 
@@ -13,16 +13,21 @@
 #define COLOR_FROZEN 40
 #define COLOR_POISON 50
 
-#define DUNG_W 80 
-#define DUNG_H 21 
+#define DUNG_W 80
+#define DUNG_H 21
 
-#define ROOM_MIN_W 3 
-#define ROOM_MIN_H 2 
+#define ROOM_MIN_W 3
+#define ROOM_MIN_H 2
 
 #define ROOM_MAX_W 15
 #define ROOM_MAX_H 10
 
 #define IMMUTABLE 255
+
+#define MAX_INV 10
+#define MAX_EQUIP 12
+#define INV_LIST = 0
+#define EQU_LIST = 1
 
 #define BUFFER_SIZE (1<<8)
 
@@ -35,7 +40,7 @@
 // load path
 extern char* loadp;
 
-// save path 
+// save path
 extern char* savep;
 
 // true if PC can never die

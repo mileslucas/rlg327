@@ -6,7 +6,6 @@
 #include "debug.h"
 #include "objectfactory.h"
 #include "parser.h"
-#include "object.h"
 
 using namespace std;
 
@@ -95,6 +94,33 @@ int ObjectFactory::deleteFactories()
 	return 0;
 }
 
+Item *ObjectFactory::generateItem()
+{
+	Item *item = new Item(
+	name           , 
+	desc           ,
+	itype          ,
+	icolor         ,
+	dhit   ->roll(),
+	ddam           ,
+	ddodge ->roll(),
+	ddef   ->roll(), 
+	dweight->roll(),
+	dspeed ->roll(), 
+	dattr  ->roll(), 
+	dval   ->roll()
+	);
+
+	return item;
+}
+
+Item *ObjectFactory::generateRandItem()
+{
+	int index = rand() % (int)factories.size();
+
+	return factories[index]->generateItem();
+}
+
 int ObjectFactory::initFields()
 {
 	dhit    = Dice::parseDice(hit   );
@@ -108,7 +134,6 @@ int ObjectFactory::initFields()
 
 	itype  = Parser::parseType (type );
 	icolor = Parser::parseColor(color);
-	Debug::log("Color of object %c is %d", ObjectFactory::SYMB[itype], icolor);
 
 	return 0;
 }
@@ -121,18 +146,18 @@ int ObjectFactory::load(const char *path)
 		cerr << "Failed to open " << path << endl;
 		return -1;
 	}
-
+	
 	if (ifs.eof())
 		return -1;
 
 	// meta
 	string line;
 	getline(ifs, line);
-	if (line == "RLG327 OBJECT DESCRIPTION 1") {
+	if (line=="RLG327 OBJECT DESCRIPTION 1") {
 		while (!ifs.eof()) {
 			ObjectFactory *of = next(ifs);
 
-			if (of) {
+			if (of && of->allFieldsFilled()) {
 				factories.push_back(of);
 			} else {
 				delete of;
@@ -145,37 +170,20 @@ int ObjectFactory::load(const char *path)
 	return -1;
 }
 
-Object *ObjectFactory::getObj()
-{
-	int hit = dhit->roll();
-	int dodge = ddodge->roll();
-	int def = ddef->roll();
-	int weight = dweight->roll();
-	int speed = dspeed->roll();
-	int attr = dattr->roll();
-	int val = dval->roll();
-
-
-	return new Object(SYMB[itype], ddam, hit, dodge, def, weight, speed, attr, val, icolor, TYPE[itype], name, desc);
-}
-
-Object *ObjectFactory::getRandObj()
-{
-	return factories[rand() % factories.size()]->getObj();
-}
-
-
 ObjectFactory *ObjectFactory::next(istream &is)
 {
-	ObjectFactory *of = new ObjectFactory;
-
+	ObjectFactory *of = NULL;
+	
 	while (!is.eof()) {
+		if (of) delete of;
+		of = new ObjectFactory;
+
 		bool hasParsingError = false;
 
 		string line;
 		while (!is.eof()) {
 			getline(is, line);
-			if (line == "BEGIN OBJECT")
+			if (line=="BEGIN OBJECT")
 				break;
 		}
 		while (!is.eof() && !hasParsingError) {
@@ -183,28 +191,28 @@ ObjectFactory *ObjectFactory::next(istream &is)
 			string k;
 			stringstream ss(line);
 			ss >> k;
-			if (k == "END") {
+			if (k=="END") {
 				break;
-			} else if (k == "NAME") {
+			} else if (k=="NAME") {
 				if (!of->name.empty()) {
 					Debug::log("duplicate NAME");
 					hasParsingError = true;
 				}
 				Parser::trim(ss);
 				getline(ss, of->name);
-			} else if (k == "DESC") {
+			} else if (k=="DESC") {
 				if (!of->desc.empty()) {
 					Debug::log("duplicate DESC");
 					hasParsingError = true;
 				}
-				while (!is.eof()) {
+				while(!is.eof()) {
 					getline(is, line);
-					if (line.c_str()[0] == '.') break;
+					if (line.c_str()[0]=='.') break;
 					of->desc += line;
-					if (is.peek() != '.')
-						of->desc += '\n';
+					if (is.peek()!='.')
+						of->desc +='\n';
 				}
-			} else if (k == "TYPE") {
+			} else if (k=="TYPE") {
 				if (!of->type.empty()) {
 					Debug::log("duplicate TYPE");
 					hasParsingError = true;
@@ -216,33 +224,33 @@ ObjectFactory *ObjectFactory::next(istream &is)
 					Debug::log("error parsing TYPE %s", of->type.c_str());
 					hasParsingError = true;
 				}
-			} else if (k == "COLOR") {
+			} else if (k=="COLOR") {
 				if (!of->color.empty()) {
 					Debug::log("duplicate COLOR");
 					hasParsingError = true;
 				}
 				Parser::trim(ss);
 				getline(ss, of->color);
+
 				if (0 > Parser::parseColor(of->color)) {
 					Debug::log("error parsing COLOR %s", of->color.c_str());
 					hasParsingError = true;
-				} 
-
-			} else if (k == "HIT") {
+				}
+			} else if (k=="HIT") {	
 				hasParsingError = Parser::parseDiceField(ss, of->hit);
-			} else if (k == "DAM") {
+			} else if (k=="DAM") {	
 				hasParsingError = Parser::parseDiceField(ss, of->dam);
-			} else if (k == "DODGE") {
+			} else if (k=="DODGE") {	
 				hasParsingError = Parser::parseDiceField(ss, of->dodge);
-			} else if (k == "DEF") {
+			} else if (k=="DEF") {	
 				hasParsingError = Parser::parseDiceField(ss, of->def);
-			} else if (k == "WEIGHT") {
+			} else if (k=="WEIGHT") {	
 				hasParsingError = Parser::parseDiceField(ss, of->weight);
-			} else if (k == "SPEED") {
+			} else if (k=="SPEED") {	
 				hasParsingError = Parser::parseDiceField(ss, of->speed);
-			} else if (k == "ATTR") {
+			} else if (k=="ATTR") {	
 				hasParsingError = Parser::parseDiceField(ss, of->attr);
-			} else if (k == "VAL") {
+			} else if (k=="VAL") {	
 				hasParsingError = Parser::parseDiceField(ss, of->val);
 			}
 		}
@@ -253,26 +261,26 @@ ObjectFactory *ObjectFactory::next(istream &is)
 			return of;
 		}
 	}
-	if (of) delete of;
+	if (of) delete of;	
 	return NULL;
 }
 
 bool ObjectFactory::allFieldsFilled()
 {
 	return !(
-	           name  .empty() ||
-	           desc  .empty() ||
-	           type  .empty() ||
-	           color .empty() ||
-	           hit   .empty() ||
-	           dam   .empty() ||
-	           dodge .empty() ||
-	           def   .empty() ||
-	           weight.empty() ||
-	           speed .empty() ||
-	           attr  .empty() ||
-	           val   .empty()
-	       );
+	name  .empty() || 
+	desc  .empty() || 
+	type  .empty() ||
+	color .empty() || 
+	hit   .empty() || 
+	dam   .empty() ||
+	dodge .empty() || 
+	def   .empty() || 
+	weight.empty() ||
+	speed .empty() || 
+	attr  .empty() || 
+	val   .empty()
+	);
 }
 
 ostream& operator<<(ostream& os, ObjectFactory &of)

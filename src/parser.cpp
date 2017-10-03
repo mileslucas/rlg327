@@ -33,9 +33,6 @@ int Parser::parse(const char *path)
 			MonsterFactory *mf = MonsterFactory::next(ifs);
 
 			if (mf) {
-				
-				
-				//1.07
 				cerr << *mf << endl;
 				delete mf;
 			}
@@ -82,17 +79,14 @@ int Parser::parseAbil(string &abil)
 
 int Parser::parseColor(string &s)
 {
-	stringstream ss(s);
-	string c;
-	ss >> c; // one color
-	if (c=="BLACK"  ) return COLOR_WHITE;
-	if (c=="RED"    ) return COLOR_RED;
-	if (c=="GREEN"  ) return COLOR_GREEN;
-	if (c=="YELLOW" ) return COLOR_YELLOW;
-	if (c=="BLUE"   ) return COLOR_BLUE;
-	if (c=="MAGENTA") return COLOR_MAGENTA;
-	if (c=="CYAN"   ) return COLOR_CYAN;
-	if (c=="WHITE"  ) return COLOR_WHITE;
+	if (s=="BLACK"  ) return COLOR_WHITE;
+	if (s=="RED"    ) return COLOR_RED;
+	if (s=="GREEN"  ) return COLOR_GREEN;
+	if (s=="YELLOW" ) return COLOR_YELLOW;
+	if (s=="BLUE"   ) return COLOR_BLUE;
+	if (s=="MAGENTA") return COLOR_MAGENTA;
+	if (s=="CYAN"   ) return COLOR_CYAN;
+	if (s=="WHITE"  ) return COLOR_WHITE;
 	return -1;
 }
 

@@ -139,6 +139,7 @@ int UI::initColors()
 	for (int i = 0; i < 8; i++) {
 		init_pair(i, i, COLOR_BLACK);
 	}
+
 	return 0;
 }
 
@@ -177,24 +178,119 @@ static void mListFrom(int start)
 	mvaddch(r, 18, ACS_LRCORNER);
 }
 
+static void oListFrom(int start)
+{
+	int i;
+	char buf[50];
+
+	int numobj = dungeon->numobj();
+
+	mvprintw(0, 1, "Listing Object %d to %d out of %d "
+	         "(press ESC or Q to quit)",
+	         start + 1, MIN((start + 21), numobj), numobj);
+
+	for (i = start; i < MIN((start + 21), numobj); i++) {
+		Item *item = dungeon->itemv[i];
+
+		sprintf(buf, "     %-12s",
+		        ObjectFactory::TYPE[item->type].c_str());
+
+		mvprintw(i - start + 1, 1, "   %s", buf);
+
+		int color = item->color;
+		attron(COLOR_PAIR(color));
+		mvprintw(i - start + 1, 2, "%c", item->getSymb());
+		attroff(COLOR_PAIR(color));
+
+		mvaddch(i - start + 1, 18, ACS_VLINE);
+	}
+	int r = MIN((start + 21), numobj);
+	for (int c = 1; c < 18; c++)
+		mvaddch(r, c, ACS_HLINE);
+	mvaddch(r, 18, ACS_LRCORNER);
+}
+
 int UI::printEquipmentSlots()
 {
 	mvprintw(23, 44, "Equipment");
 
 	int col = 55;
-	for (int i = 0; i < 12; i++) {
+	for (int i = 0; i < MAX_EQUIP; i++) {
 		mvprintw(22, col + i * 2, "%c", (char) 'A' + i);
 
 		mvprintw(23, col + i * 2 - 1, "'");
 
-		int color = COLOR_MAGENTA;
+		char symb = pc->equipment[i] ? pc->equipment[i]->symb : ' ';
+		// TODO
+		int color = pc->equipment[i] ? pc->equipment[i]->color : COLOR_GREEN;
 		attron(COLOR_PAIR(color));
-		mvaddch(23, col + i * 2, ACS_DIAMOND);
+		mvaddch(23, col + i * 2, symb);
 		attroff(COLOR_PAIR(color));
 	}
 	mvprintw(23, 78, "'");
 
 	return 0;
+}
+
+static void iListFrom()
+{
+	int i;
+	char buf[50];
+
+	int numitem = pc->inventory.size();
+
+	mvprintw(0, 1, "Inventory List (press ESC or Q to quit)");
+
+	for (i = 0; i < numitem; i++) {
+		Item *item = pc->inventory[i];
+
+		sprintf(buf, " %d    %-12s", i,
+		        ObjectFactory::TYPE[item->type].c_str());
+
+		mvprintw(i + 1, 1, "   %s", buf);
+
+		int color = item->color;
+		attron(COLOR_PAIR(color));
+		mvprintw(i + 1, 2, "%c", item->getSymb());
+		attroff(COLOR_PAIR(color));
+
+		mvaddch(i + 1, 18, ACS_VLINE);
+	}
+	int r = numobj;
+	for (int c = 1; c < 18; c++)
+		mvaddch(r, c, ACS_HLINE);
+	mvaddch(r, 18, ACS_LRCORNER);
+}
+
+int UI::iList()
+{
+	iListFrom();
+	refresh();
+
+	while (1) {
+		int ch = getch();
+
+		int quit = 0;
+
+		switch (ch) {
+		case 'Q':
+		case 'q':
+		case 27: // ESC
+			quit = 1;
+			break;
+		}
+		if (quit)
+			break;
+
+		for (int i = 0; i < 80; i++) {
+			mvprintw(0,  i, " ");
+			mvprintw(22, i, " ");
+		}
+
+	}
+
+	return 0;
+
 }
 
 int UI::printHP()
@@ -252,7 +348,7 @@ int UI::printMonsterHP()
 	return 0;
 }
 
-int UI::printMonsterHP(NPC *att)
+int UI::printMonsterHP(NPC * att)
 {
 	if (!att) {
 		clearRow(0);
@@ -352,18 +448,55 @@ int UI::mList()
 	return 0;
 }
 
+int UI::oList()
+{
+	int from = 0;
+
+	oListFrom(from);
+	refresh();
+
+	while (1) {
+		int ch = getch();
+
+		int quit = 0;
+
+		switch (ch) {
+		case 'Q':
+		case 'q':
+		case 27: // ESC
+			quit = 1;
+			break;
+		case KEY_DOWN:
+			if (from > 21 - nummon && from < nummon - 21) from++;
+			oListFrom(from);
+			refresh();
+			break;
+		case KEY_UP:
+			from = MAX((from - 1), 0);
+			oListFrom(from);
+			refresh();
+			break;
+		}
+		if (quit)
+			break;
+	}
+
+	clearRow(0);
+	clearRow(22);
+
+	return 0;
+}
+
 int UI::sList()
 {
 	int color = COLOR_CYAN;
 	attron(COLOR_PAIR(color));
 
-	int costB = 30, costF = 20, costH = 10, costP = 20, costT = 30;
-
-	mvprintw(17, 21, "B: Blast nearby area   cost: %d ", costB);
-	mvprintw(18, 21, "F: Frozen ball         cost: %d ", costF);
-	mvprintw(19, 21, "H: Heal PC             cost: %d ", costH);
-	mvprintw(20, 21, "P: Poison ball         cost: %d ", costP);
-	mvprintw(21, 21, "T: Teleport            cost: %d ", costT);
+	mvprintw(17, 21, "B: Blast nearby area   cost: 30  ");
+	mvprintw(18, 21, "F: Frozen ball         cost: 20  ");
+	mvprintw(19, 21, "H: Heal PC             cost: 10  ");
+	mvprintw(20, 21, "P: Poison ball         cost: 20  ");
+	mvprintw(21, 21, "T: Teleport            cost: 30  ");
 
 	attroff(COLOR_PAIR(color));
 
@@ -378,7 +511,7 @@ int UI::sList()
 		break;
 	case 'B':
 	case 'b':
-		if (pc->mp < (cost = costB))
+		if (pc->mp < (cost = 30))
 			break;
 		for (int r = pcy - 1; r <= pcy + 1; r++) {
 			for (int c = pcx - 1; c <= pcx + 1; c++) {
@@ -402,7 +535,7 @@ int UI::sList()
 		break;
 	case 'F':
 	case 'f':
-		if (pc->mp < (cost = costF))
+		if (pc->mp < (cost = 20))
 			break;
 		target = selectTarget();
 		if (target < 0)
@@ -431,7 +564,7 @@ int UI::sList()
 		refresh();
 	case 'H':
 	case 'h':
-		if (pc->mp < (cost = costH))
+		if (pc->mp < (cost = 10))
 			break;
 		pc->hp += pc->hpmax() * 0.25;
 		if (pc->hp > pc->hpmax())
@@ -442,7 +575,7 @@ int UI::sList()
 		break;
 	case 'P':
 	case 'p':
-		if (pc->mp < (cost = costP))
+		if (pc->mp < (cost = 20))
 			break;
 		target = selectTarget();
 		if (target < 0)
@@ -473,7 +606,7 @@ int UI::sList()
 		break;
 	case 'T':
 	case 't':
-		if (pc->mp < (cost = costT))
+		if (pc->mp < (cost = 30))
 			break;
 		while (1) {
 			int r = rand() % 21;
@@ -491,7 +624,7 @@ int UI::sList()
 	return 0;
 }
 
-int UI::selectNPC(NPC *npc)
+int UI::selectNPC(NPC * npc)
 {
 	reprint();
 
@@ -560,5 +693,99 @@ int UI::selectTarget()
 	reprint();
 
 	return -1;
+}
+
+int UI::promptUser(int list)
+{
+	clearRow(22);
+	if (list) // equipment list
+	{
+		mvprintw(22, 1, "Please select an equipment slot (A-L)");
+		printEquipmentSlots();
+		while (1) {
+			char in = getch();
+			switch (in) {
+			case 'A':
+			case 'a':
+				return 0;
+			case 'B':
+			case 'b':
+				return 1;
+			case 'C':
+			case 'c':
+				return 2;
+			case 'D':
+			case 'd':
+				return 3;
+			case 'E':
+			case 'e':
+				return 4;
+			case 'F':
+			case 'f':
+				return 5;
+			case 'G':
+			case 'g':
+				return 6;
+			case 'H':
+			case 'h':
+				return 7;
+			case 'I':
+			case 'i':
+				return 8;
+			case 'J':
+			case 'j':
+				return 9;
+			case 'K':
+			case 'k':
+				return 10;
+			case 'L':
+			case 'l':
+				return 11;
+			case 27:
+			case 'Q':
+			case 'q':
+				return -1;
+			default:
+				break;
+			}
+		}
+	}
+	else // Inventory list
+	{
+		mvprintw(22, 1, "Please select an inventory slot (0-9)");
+		iListFrom();
+		while (1) {
+			char in = getch();
+			switch (in) {
+			case '0':
+				return 0;
+			case '1':
+				return 1;
+			case '2':
+				return 2;
+			case '3':
+				return 3;
+			case '4':
+				return 4;
+			case '5':
+				return 5;
+			case '6':
+				return 6;
+			case '7':
+				return 7;
+			case '8':
+				return 8;
+			case '9':
+				return 9;
+			case 27:
+			case 'Q':
+			case 'q':
+				return -1;
+				break;
+			default:
+				break;
+			}
+		}
+	}
 }
 

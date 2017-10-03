@@ -33,8 +33,30 @@ int MonsterFactory::deleteFactories()
 	return 0;
 }
 
-int MonsterFactory::initFields()
+NPC *MonsterFactory::generateNPC()
+{	
+	NPC *npc = new NPC(
+	name, 
+	desc,
+	csymb, 
+	icolor, 
+	dspeed->roll(), 
+	iabil,
+	dhp->roll(),
+	ddam
+	);
+	return npc;
+}
+
+NPC *MonsterFactory::generateRandNPC()
 {
+	int index = rand() % factories.size();
+
+	return factories[index]->generateNPC();
+}
+
+int MonsterFactory::initFields()
+{	
 	dspeed = Dice::parseDice(speed);
 	dhp    = Dice::parseDice(hp);
 	ddam   = Dice::parseDice(dam);
@@ -42,7 +64,7 @@ int MonsterFactory::initFields()
 	csymb  = Parser::parseSymb (symb);
 	icolor = Parser::parseColor(color);
 	iabil  = Parser::parseAbil (abil);
-
+	
 	return 0;
 }
 
@@ -61,7 +83,7 @@ int MonsterFactory::load(const char *path)
 	// meta
 	string line;
 	getline(ifs, line);
-	if (line == "RLG327 MONSTER DESCRIPTION 1") {
+	if (line=="RLG327 MONSTER DESCRIPTION 1") {
 		while (!ifs.eof()) {
 			MonsterFactory *mf = next(ifs);
 
@@ -79,15 +101,18 @@ int MonsterFactory::load(const char *path)
 
 MonsterFactory *MonsterFactory::next(istream &is)
 {
-	MonsterFactory *mf = new MonsterFactory;
+	MonsterFactory *mf = NULL;
 
 	while (!is.eof()) {
+		if (mf) delete mf;
+		mf = new MonsterFactory;
+
 		bool hasParsingError = false;
 
 		string line;
 		while (!is.eof()) {
 			getline(is, line);
-			if (line == "BEGIN MONSTER")
+			if (line=="BEGIN MONSTER")
 				break;
 		}
 		while (!is.eof() && !hasParsingError) {
@@ -95,28 +120,28 @@ MonsterFactory *MonsterFactory::next(istream &is)
 			string k;
 			stringstream ss(line);
 			ss >> k;
-			if (k == "END") {
+			if (k=="END") {
 				break;
-			} else if (k == "NAME") {
+			} else if (k=="NAME") {
 				if (!mf->name.empty()) {
 					Debug::log("duplicate NAME");
 					hasParsingError = true;
 				}
 				Parser::trim(ss);
 				getline(ss, mf->name);
-			} else if (k == "DESC") {
+			} else if (k=="DESC") {
 				if (!mf->desc.empty()) {
 					Debug::log("duplicate DESC");
 					hasParsingError = true;
 				}
-				while (!is.eof()) {
+				while(!is.eof()) {
 					getline(is, line);
-					if (line.c_str()[0] == '.') break;
+					if (line.c_str()[0]=='.') break;
 					mf->desc += line;
-					if (is.peek() != '.')
-						mf->desc += '\n';
+					if (is.peek()!='.')
+						mf->desc +='\n';
 				}
-			} else if (k == "SYMB") {
+			} else if (k=="SYMB") {
 				if (!mf->symb.empty()) {
 					Debug::log("duplicate SYMB");
 					hasParsingError = true;
@@ -124,12 +149,12 @@ MonsterFactory *MonsterFactory::next(istream &is)
 				Parser::trim(ss);
 				getline(ss, mf->symb);
 
-				if (-1 == Parser::parseSymb(mf->symb)) {
+				if (-1==Parser::parseSymb(mf->symb)) {
 					Debug::log("error parsing SYMB %s",
-					           mf->symb.c_str());
+							mf->symb.c_str());
 					hasParsingError = true;
 				}
-			} else if (k == "COLOR") {
+			} else if (k=="COLOR") {
 				if (!mf->color.empty()) {
 					Debug::log("duplicate COLOR");
 					hasParsingError = true;
@@ -137,29 +162,29 @@ MonsterFactory *MonsterFactory::next(istream &is)
 				Parser::trim(ss);
 				getline(ss, mf->color);
 
-				if (-1 == Parser::parseColor(mf->color)) {
+				if (-1==Parser::parseColor(mf->color)) {
 					Debug::log("error parsing COLOR %s",
-					           mf->color.c_str());
+							mf->color.c_str());
 					hasParsingError = true;
 				}
-			} else if (k == "SPEED") {
+			} else if (k=="SPEED") {
 				hasParsingError = Parser::parseDiceField(ss, mf->speed);
-			} else if (k == "ABIL") {
+			} else if (k=="ABIL") {
 				if (!mf->abil.empty()) {
 					Debug::log("duplicate ABIL");
 					hasParsingError = true;
 				}
 				Parser::trim(ss);
 				getline(ss, mf->abil);
-
-				if (-1 == Parser::parseAbil(mf->abil)) {
+				
+				if (-1==Parser::parseAbil(mf->abil)) {
 					Debug::log("error parsing ABIL %s",
-					           mf->abil.c_str());
+							mf->abil.c_str());
 					hasParsingError = true;
 				}
-			} else if (k == "HP") {
+			} else if (k=="HP") {
 				hasParsingError = Parser::parseDiceField(ss, mf->hp);
-			} else if (k == "DAM") {
+			} else if (k=="DAM") {
 				hasParsingError = Parser::parseDiceField(ss, mf->dam);
 			}
 		}
@@ -176,28 +201,15 @@ MonsterFactory *MonsterFactory::next(istream &is)
 
 bool MonsterFactory::allFieldsFilled()
 {
-	return
-	    !name .empty() &&
-	    !desc .empty() &&
-	    !symb .empty() &&
-	    !color.empty() &&
-	    !speed.empty() &&
-	    !abil .empty() &&
-	    !hp   .empty() &&
-	    !dam  .empty();
-}
-
-NPC *MonsterFactory::generateNPC()
-{
-	int speed = this->dspeed->roll();
-	int hp = this->dhp->roll();
-	return new NPC(speed, hp, ddam, csymb, icolor, iabil, name, desc);
-}
-
-
-NPC *MonsterFactory::generateRandNPC()
-{
-	return factories[rand() % factories.size()]->generateNPC();
+	return 
+		!name .empty() && 
+		!desc .empty() && 
+		!symb .empty() &&
+		!color.empty() &&
+		!speed.empty() && 
+		!abil .empty() && 
+		!hp   .empty() && 
+		!dam  .empty();
 }
 
 ostream& operator<<(ostream& os, MonsterFactory &mf)

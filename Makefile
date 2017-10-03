@@ -1,42 +1,31 @@
 CFLAGS := -g -Wall -Werror 
+CC := g++
 
-OBJS := \
-character.o \
-core.o \
-corridor.o \
-debug.o \
-dice.o \
-dijkstra.o \
-dungeon.o \
-heap.o \
-main.o \
-monsterfactory.o \
-move.o \
-npc.o \
-object.o \
-objectfactory.o \
-parser.o \
-pc.o \
-point.o \
-room.o \
-turn.o \
-ui.o \
+
+INC := -I include
+SRCDIR := src
+BUILDDIR := build
+LIB := -lncurses
 
 NAME := rlg327
+
+SOURCES := $(shell find $(SRCDIR) -type f -name *.cpp)
+OBJS := $(patsubst $(SRCDIR), $(BUILDDIR), $(SOURCES:.CPP=.O))
 
 all: $(NAME)
 
 clean:
-	@$(RM) -f $(NAME) *.o .DS_Store
+	rm -rf $(NAME) $(BUILDDIR) .DS_Store
 
 $(NAME): $(OBJS) 
-	@g++ $(CFLAGS) -o $(NAME) $(OBJS) -lncurses
+	$(CC) $(CFLAGS) $(INC) -o $@  $^ $(LIB)
 
-%.o: %.cpp
-	@g++ $(CFLAGS) -c $<
+$(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
+	mkdir -p $(BUILDDIR)
+	g++ $(CFLAGS) $(INC) -o $@ -c $<
 
 BASE := ../lucas_miles.assignment-
-NUM := 1.08
+NUM := 1.09
 TARDIR := $(BASE)$(NUM)
 DIR := $(TARDIR)/
 tar: 
@@ -46,4 +35,4 @@ tar:
 	@tar cvfz $(TARDIR).tar.gz $(DIR)
 	@rm -rf $(DIR)
 
-
+.PHONY: clean

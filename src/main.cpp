@@ -16,7 +16,6 @@
 #include "monsterfactory.h"
 #include "move.h"
 #include "npc.h"
-#include "objectfactory.h"
 #include "parser.h"
 #include "pc.h"
 #include "room.h"
@@ -29,17 +28,17 @@ static int regenerateDungeon();
 
 int main(int argc, char** argv)
 {
-	char *env = getenv("HOME");
+	// char *env = getenv("HOME");
 
 	char dirpath[1 << 8], monpath[1 << 8], objpath[1 << 8];
-	sprintf(dirpath, "%s/.rlg327", env);
+	sprintf(dirpath, ".");
 	mkdir(dirpath, S_IRUSR | S_IWUSR | S_IXUSR);
 
 	char filepath[1 << 8];
-	sprintf(filepath, "%s/.rlg327/dungeon", env);
+	sprintf(filepath, "dungeon");
 
-	sprintf(monpath, "%s/.rlg327/monster_desc.txt", env);
-	sprintf(objpath, "%s/.rlg327/object_desc.txt", env);
+	sprintf(monpath, "monster_desc.txt");
+	sprintf(objpath, "object_desc.txt");
 
 	// options
 	if (argc > 1) {
@@ -59,7 +58,7 @@ int main(int argc, char** argv)
 			} else if (!strcmp("--nummon", argv[i])) {
 				if (i + 1 < argc && argv[i + 1][0] != '-') {
 					nummon = atoi(argv[++i]);
-					int max = 1600;
+					int max = 1 << 8;
 					if (nummon > max) {
 						cerr << "nummon should not exceed " << max << endl;
 						return 1;
@@ -149,7 +148,6 @@ int main(int argc, char** argv)
 
 	pc = new PC;
 
-	// Load factories
 	MonsterFactory::load(monpath);
 	ObjectFactory::load(objpath);
 
@@ -232,6 +230,8 @@ int main(int argc, char** argv)
 		// 1 if user does some action that should cost no turn
 		int noturn = 0;
 
+		int slot;
+
 		int pcx, pcy;
 		pc->getLocation(&pcx, &pcy);
 
@@ -303,6 +303,10 @@ int main(int argc, char** argv)
 		case 'm':
 			UI::mList(); noturn = 1;
 			break;
+		case 'O':
+		case 'o':
+			UI::oList(); noturn = 1;
+			break;
 		case 'S':
 		case 's':
 			quit = 1;
@@ -314,6 +318,38 @@ int main(int argc, char** argv)
 		case 'c':
 			noturn = 1;
 			UI::sList();
+			break;
+		case 'W':
+		case 'w':
+			slot = UI::promptUser(0);
+			pc->wearItem(slot);
+			noturn = 1;
+			break;
+		case 'T':
+		case 't':
+			slot = UI::promptUser(1);
+			pc->takeOffItem(slot);
+			noturn = 1;
+			break;
+		case 'D':
+		case 'd':
+			slot = UI::promptUser(0);
+			pc->dropItem(slot);
+			noturn = 1;
+		case 'X':
+		case 'x':
+			slot = UI::promptUser(0);
+			pc->expungeItem(slot);
+			noturn = 1;
+			break;
+		case 'i':
+			UI::iList();
+			noturn = 1;
+			break;
+		case 'I':
+			slot = UI::promptUser(0);
+			pc->inspectItem(slot);
+			noturn = 1;
 			break;
 		default:
 			noturn = 1;
@@ -371,10 +407,10 @@ int main(int argc, char** argv)
 	if (savep) {
 		dungeon->save(savep);
 	}
-
-	delete dungeon;
 	MonsterFactory::deleteFactories();
 	ObjectFactory::deleteFactories();
+
+	delete dungeon;
 
 	delete pc;
 
@@ -383,16 +419,14 @@ int main(int argc, char** argv)
 
 static int regenerateDungeon()
 {
-	int oldNumMon = dungeon->nummon();
-	int oldNumObj = dungeon->numobj();
 	delete dungeon;
 
 	dungeon = new Dungeon;
 
 	dungeon->generate();
 
-	dungeon->generateMonsters(oldNumMon);
-	dungeon->generateObjects(oldNumObj);
+	dungeon->generateMonsters(nummon);
+	dungeon->generateObjects(numobj);
 
 	pc->clearSeenDungeon();
 
