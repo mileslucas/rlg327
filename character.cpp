@@ -10,8 +10,11 @@ Character::Character()
 {
 	dead = false;
 	turn = 0;
-	
-	this->_isPC = false;
+
+	poison = 0;
+	frozen = 0;
+
+	dam = NULL;
 }
 
 Character::~Character()
@@ -35,8 +38,21 @@ void Character::setLocation(int x, int y)
 	this->y = y;
 }
 
-int Character::getColor()
+int Character::getTotalDam()
 {
-	return color;
+	if (!dam)
+		return 10;
+	return dam->roll();
 }
 
+int Character::getTotalDef()
+{
+	return 0;
+}
+
+int Character::getColor()
+{
+	if (frozen) return COLOR_FROZEN;
+	if (poison) return COLOR_POISON;
+	return color;
+}

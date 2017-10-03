@@ -5,16 +5,17 @@
 char* loadp = NULL;
 char* savep = NULL;
 
-int invulnerable = 0;
+bool cheat = false;
+bool nofog = false;
+bool sight = false;
+
+char unify = 0;
 
 int nummon = 10;
-
-int nofog = 0;
+int numobj = 10;
 
 int pcx = 0;
 int pcy = 0;
 
 unsigned int seed = 0;
 
-int sight = 0; // 1 if display line of sight
-int unify = 0;

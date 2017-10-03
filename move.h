@@ -7,11 +7,11 @@
 class Move
 {
 	public:
-		// move NPC based on its ABIL
+		/* move NPC based on its ABIL */
 		static int npc(NPC *);
-		// move PC automatically
+		/* move PC automatically */
 		static int pcAI();
-		// move any character
+		/* move any character */
 		static int move(Character *, int, int);
 
 		static int dijkstra(Character *, int tunneling);

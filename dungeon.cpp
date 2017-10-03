@@ -11,12 +11,13 @@
 #include "dungeon.h"
 #include "monsterfactory.h"
 #include "npc.h"
+#include "objectfactory.h"
 #include "pc.h"
 #include "room.h"
 
 static void print(int r, int c, char ch)
 {
-	mvprintw(r+1, c, "%c", ch);
+	mvprintw(r + 1, c, "%c", ch);
 }
 
 Dungeon *dungeon;
@@ -28,50 +29,55 @@ Dungeon::Dungeon()
 
 	// init immutable borders
 	int r, c;
-	for (r=0;r<DUNG_H;r++) {
+	for (r = 0; r < DUNG_H; r++) {
 		tmap[r][0] = ROCK;
-		tmap[r][DUNG_W-1] = ROCK;
-			
+		tmap[r][DUNG_W - 1] = ROCK;
+
 		hmap[r][0] = IMMUTABLE;
-		hmap[r][DUNG_W-1] = IMMUTABLE;
+		hmap[r][DUNG_W - 1] = IMMUTABLE;
 	}
-	for (c=0;c<DUNG_W;c++) {
+	for (c = 0; c < DUNG_W; c++) {
 		tmap[0][c] = ROCK;
-		tmap[DUNG_H-1][c] = ROCK;
-		
+		tmap[DUNG_H - 1][c] = ROCK;
+
 		hmap[0][c] = IMMUTABLE;
-		hmap[DUNG_H-1][c] = IMMUTABLE;
+		hmap[DUNG_H - 1][c] = IMMUTABLE;
 	}
 
 	// init cmap and imap
-	for (r=0;r<DUNG_H;r++) {
-		for (c=0;c<DUNG_W;c++) {
+	for (r = 0; r < DUNG_H; r++) {
+		for (c = 0; c < DUNG_W; c++) {
 			cmap[r][c] = NULL;
+			imap[r][c] = 0;
 		}
 	}
 }
 
 Dungeon::~Dungeon()
-{	
-	for (int i=0; i<(int)roomv.size(); i++)
+{
+	for (int i = 0; i < (int)roomv.size(); i++)
 		delete roomv[i];
 	roomv.clear();
 
-	for (int i=0; i<(int)npcv.size(); i++)
+	for (int i = 0; i < (int)npcv.size(); i++)
 		delete npcv[i];
 	npcv.clear();
 
-	for (int i=0; i<(int)deadnpcv.size(); i++)
+	for (int i = 0; i < (int)deadnpcv.size(); i++)
 		delete deadnpcv[i];
 	deadnpcv.clear();
+
+	for (int i = 0; i < (int)obv.size(); i++)
+		delete obv[i];
+	obv.clear();
 
 	delete turn;
 }
 
 int Dungeon::getNPCIndex(NPC *c)
 {
-	for (int i=0; i<nummon(); i++) {
-		if (npcv[i]==c)
+	for (int i = 0; i < nummon(); i++) {
+		if (npcv[i] == c)
 			return i;
 	}
 	return -1;
@@ -79,13 +85,14 @@ int Dungeon::getNPCIndex(NPC *c)
 
 int Dungeon::fill(char ch)
 {
-	for (int r=1; r<DUNG_H-1; r++) {
-		for (int c=1; c<DUNG_W-1; c++) {
+	for (int r = 1; r < DUNG_H - 1; r++) {
+		for (int c = 1; c < DUNG_W - 1; c++) {
 			tmap[r][c] = ch;
-			
-			if(ch==ROCK) {
+
+			if (ch == ROCK) {
 				hmap[r][c] = 1 + rand() % 254;
 			}
+
 		}
 	}
 	return 0;
@@ -110,14 +117,30 @@ int Dungeon::placeCharacter(Character *cp)
 	return 0;
 }
 
+int Dungeon::placeObject(Object *ob)
+{
+	while(1) {
+		int r = rand() % DUNG_H;
+		int c = rand() % DUNG_W;
+
+		if(!hmap[r][c]) {
+			imap[r][c] = ob;
+			obv.push_back(ob);
+			break;
+		}
+	}
+	return 0;
+}
+
 int Dungeon::placeCharacter(Character *c, int x, int y)
 {
 	cmap[y][x] = c;
 	c->setLocation(x, y);
-	
-	if (!c->isPC())
+
+	if (!c->isPC()){
 		npcv.push_back((NPC *)c);
-	
+	}
+
 	return 0;
 }
 
@@ -126,12 +149,12 @@ int Dungeon::printDungeon()
 	// build sight map
 	if (sight) {
 		// clear old sight map
-		for (int r=0; r<DUNG_H; r++) {
-			for(int c=0; c<DUNG_W; c++) {
+		for (int r = 0; r < DUNG_H; r++) {
+			for (int c = 0; c < DUNG_W; c++) {
 				sightmap[r][c] = 0;
 			}
 		}
-		for (int i = 0, npcx, npcy; i<nummon(); i++) {
+		for (int i = 0, npcx, npcy; i < nummon(); i++) {
 			npcv[i]->getLocation(&npcx, &npcy);
 			isVisible(npcx, npcy, pcx, pcy);
 		}
@@ -139,40 +162,50 @@ int Dungeon::printDungeon()
 
 	vnpcv.clear();
 
-	for (int r=0; r<DUNG_H; r++) {
-		for (int c=0; c<DUNG_W; c++) {
+	for (int r = 0; r < DUNG_H; r++) {
+		for (int c = 0; c < DUNG_W; c++) {
 			int visible = isVisible(c, r);
 
 			// character
 			if ((nofog || visible) && cmap[r][c]) {
 				int color = cmap[r][c]->getColor();
-			
+
 				// print character on the dungeon
 				attron(COLOR_PAIR(color));
 				print(r, c, cmap[r][c]->getSymb());
 				attroff(COLOR_PAIR(color));
-				
-				if (!cmap[r][c]->isPC())			
+
+				if (!cmap[r][c]->isPC())
 					vnpcv.push_back((NPC *)cmap[r][c]);
 			}
 			// line of sight (only when --sight is specified)
 			else if (sight && sightmap[r][c]) {
 				int color;
-				if (sightmap[r][c] > 0) {	
-					attron(COLOR_PAIR(color = COLOR_GREEN));
+				if (sightmap[r][c] > 0) {
+					init_pair(color = 3, COLOR_GREEN, COLOR_BLACK);
+					attron(COLOR_PAIR(color));
 					print(r, c, 'o');
 				} else {
-					attron(COLOR_PAIR(color = COLOR_RED));
+					init_pair(color = 30, COLOR_RED, COLOR_BLACK);
+					attron(COLOR_PAIR(color));
 					print(r, c, 'x');
 				}
 				attroff(COLOR_PAIR(color));
+			} // Object
+			else if ((nofog || visible) &&  imap[r][c])
+			{
+				Object *o = imap[r][c];
+				attron(COLOR_PAIR(o->color));
+				print(r, c, o->symb);
+				attroff(COLOR_PAIR(o->color));
+				pc->seenDungeon[r*DUNG_W + c] = o->symb;
 			}
 			// dungeon terrain
 			else {
 				// print dungeon cell on the dungeon
 				char *seenDungeon = pc->getSeenDungeon();
-				
-				char ch = seenDungeon[r*DUNG_W + c];
+
+				char ch = seenDungeon[r * DUNG_W + c];
 				
 				if (visible) {
 					attron(COLOR_PAIR(COLOR_YELLOW));
@@ -192,27 +225,27 @@ int Dungeon::printDungeon()
 
 int Dungeon::generate()
 {
-	Debug::log("generating new dungeon...\n");
+	//Debug::log("generating new dungeon...\n");
 
 	fill(ROCK); // fill the dungeon with rocks
 
-	int max = 1<<5;
-	for (int t=0; t<max; t++) {
+	int max = 1 << 5;
+	for (int t = 0; t < max; t++) {
 		Room *room = new Room;
-		
+
 		roomv.push_back(room);
 
-		// determine if the new room collides with any previous room	
+		// determine if the new room collides with any previous room
 		int hasCollision = 0;
-		for (int i=0; i<(int)roomv.size()-1; i++) {
+		for (int i = 0; i < (int)roomv.size() - 1; i++) {
 			if (Room::collide(room, roomv[i])) {
 				hasCollision = 1;
 				break;
 			}
 		}
 		if (hasCollision) {
-			delete roomv[roomv.size()-1];
-			roomv.erase(roomv.begin()+roomv.size()-1);
+			delete roomv[roomv.size() - 1];
+			roomv.erase(roomv.begin() + roomv.size() - 1);
 		} else {
 			room->paintOn(this);
 
@@ -230,15 +263,14 @@ int Dungeon::generate()
 	return 0;
 }
 
-// old version
 int Dungeon::generateRandMonsters(int nummon)
 {
 	Debug::log("generating monsters...\n");
 
-	// place NPC	
-	for (int i=0; i<nummon; i++) {
+	// place NPC
+	for (int i = 0; i < nummon; i++) {
 		NPC *npc = new NPC;
-		
+
 		Debug::log("place NPC %c", npc->getSymb());
 
 		placeCharacter(npc);
@@ -246,8 +278,38 @@ int Dungeon::generateRandMonsters(int nummon)
 	}
 
 	Debug::log("\nmonsters generated.\n");
-	
-	return 0;	
+
+	return 0;
+}
+
+int Dungeon::generateMonsters(int nummon)
+{
+	Debug::log("generating monsters from factories...\n");
+
+	for (int i = 0; i < nummon; i++) {
+		NPC *npc = MonsterFactory::generateRandNPC();
+
+		Debug::log("place NPC %c", npc->getSymb());
+
+		placeCharacter(npc);
+		turn->enqueue(npc);
+	}
+	Debug::log("\nmonsters generated.\n");
+
+	return 0;
+}
+
+int Dungeon::generateObjects(int numobj)
+{
+	Debug::log("generating objects from factories...\n");
+
+	for (int i = 0; i < numobj; i++) {
+		Object *ob = ObjectFactory::getRandObj();
+		placeObject(ob);
+	}
+	Debug::log("\nojbects generated.\n");
+
+	return 0;
 }
 
 bool Dungeon::isVisible(int x, int y)
@@ -257,8 +319,8 @@ bool Dungeon::isVisible(int x, int y)
 
 	if (!isVisible(pcx, pcy, x, y)) return 0;
 
-	return (pcx-r<=x && pcx+r>=x && pcy-r<=y && pcy+r>=y) 
-		|| Room::isInSameRoom(this, x, y, pcx, pcy);
+	return (pcx - r <= x && pcx + r >= x && pcy - r <= y && pcy + r >= y)
+	|| Room::isInSameRoom(this, x, y, pcx, pcy);
 }
 
 bool Dungeon::isVisible(int x1, int y1, int x2, int y2)
@@ -279,10 +341,10 @@ bool Dungeon::isVisible(int x1, int y1, int x2, int y2)
 
 	int blocked = 0;
 
-	while (curx!=x2 || cury!=y2) {
+	while (curx != x2 || cury != y2) {
 		if (hmap[cury][curx])
 			blocked = 1;
-		
+
 		if (cmap[y1][x1] && cmap[y2][x2]) {
 			if (blocked)
 				sightmap[cury][curx] = -1; // -1 means blocked
@@ -290,7 +352,7 @@ bool Dungeon::isVisible(int x1, int y1, int x2, int y2)
 				sightmap[cury][curx] =  1; //  1 means not blocked
 		}
 
-		if (ABS(dx)>ABS(dy)) {
+		if (ABS(dx) > ABS(dy)) {
 			curx += incx;
 			cury = y1 + (curx - x1) * dy / dx;
 		} else {
@@ -306,7 +368,7 @@ int Dungeon::removeMonster(NPC *npc)
 	int index = getNPCIndex(npc);
 	npcv.erase(npcv.begin() + index);
 	deadnpcv.push_back(npc);
-	
+
 	return 0;
 }
 
@@ -333,12 +395,12 @@ int Dungeon::load(const char *loadpath)
 	// 6-13
 	unsigned int buffer[2];
 	fread(buffer, sizeof(buffer), 1, fp);
-	int roomc = (be32toh(buffer[1]) - 1694)/4;
+	int roomc = (be32toh(buffer[1]) - 1694) / 4;
 
 	// 14-1693
 	fread(hmap, sizeof(hmap), 1, fp);
-	for (r=0; r<DUNG_H; r++) {
-		for (c=0; c<DUNG_W; c++) {
+	for (r = 0; r < DUNG_H; r++) {
+		for (c = 0; c < DUNG_W; c++) {
 			if (!hmap[r][c])
 				tmap[r][c] = CORR;
 			else
@@ -347,7 +409,7 @@ int Dungeon::load(const char *loadpath)
 	}
 
 	// 1694-end
-	for (i=0; i<roomc; i++) {
+	for (i = 0; i < roomc; i++) {
 		Room *room = new Room;
 
 		fread(&room->x, 1, 1, fp);
@@ -368,7 +430,7 @@ int Dungeon::load(const char *loadpath)
 int Dungeon::save(const char *savepath)
 {
 	FILE *fp = fopen(savepath, "wb");
-	if(!fp) {
+	if (!fp) {
 		fprintf(stderr, "Could not save file: %s not exist\n", savep);
 		return 1;
 	}
@@ -386,7 +448,7 @@ int Dungeon::save(const char *savepath)
 	fwrite(hmap, sizeof(hmap), 1, fp);
 
 	// 1694-end
-	for (int i=0; i<(int)roomv.size(); i++) {
+	for (int i = 0; i < (int)roomv.size(); i++) {
 		Room *room = roomv[i];
 
 		fwrite(&room->x, 1, 1, fp);

@@ -1,24 +1,26 @@
 #ifndef CORE_H
 #define CORE_H
 
-/* core settings for dungeon */
-
-#define ROCK ' ' /* char for rock */
-#define ROOM '.' /* char for room */
-#define CORR '#' /* char for path */
+#define ROCK ' '
+#define ROOM '.'
+#define CORR '#' 
 #define STAIR_DN '>'
 #define STAIR_UP '<'
 
-#define COLOR_PC 99
+#define COLOR_PC     10
+#define COLOR_HP     20
+#define COLOR_MP     30
+#define COLOR_FROZEN 40
+#define COLOR_POISON 50
 
-#define DUNG_W 80 /* dungeon width */
-#define DUNG_H 21 /* dungeon height */
+#define DUNG_W 80 
+#define DUNG_H 21 
 
-#define ROOM_MIN_W 3 /* room min width */
-#define ROOM_MIN_H 2 /* room min height */
+#define ROOM_MIN_W 3 
+#define ROOM_MIN_H 2 
 
-#define ROOM_MAX_W 15 /* room max width */
-#define ROOM_MAX_H 10 /* room max height */
+#define ROOM_MAX_W 15
+#define ROOM_MAX_H 10
 
 #define IMMUTABLE 255
 
@@ -30,34 +32,35 @@
 #define MAX(x, y) ((x)>(y)?(x):(y))
 #define MIN(x, y) ((x)<(y)?(x):(y))
 
-/* load path */
+// load path
 extern char* loadp;
-/* save path */
+
+// save path 
 extern char* savep;
 
-/* 1 if PC invulnerable */
-extern int invulnerable;
+// true if PC can never die
+extern bool cheat;
 
-/* number of monsters */
+// true if no fog of war
+extern bool nofog;
+
+// true if display light of sight
+extern bool sight;
+
+// unify all monsters into one type ['0'-'f']
+extern char unify;
+
+// number of monsters
 extern int nummon;
 
-/* 1 if no fog of war */
-extern int nofog;
+// number of objects
+extern int numobj;
 
-/* pause time */
-extern int ptime;
-
-/* PC location */
+// updated by pc->setLocation
 extern int pcx, pcy;
 
-/* seed for generating random number */
+// seed for generating random number
 extern unsigned int seed;
-
-/* 1 if display light of sight */
-extern int sight;
-
-/* 1 if unify all monsters */
-extern int unify;
 
 #endif
 

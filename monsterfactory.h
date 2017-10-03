@@ -6,29 +6,54 @@
 #include <vector>
 
 #include "dice.h"
+#include "character.h"
 #include "npc.h"
-
 
 using namespace std;
 
 class MonsterFactory
-{	
-	public:
-		string name;
-		string desc;
-		char symb;
-		int color;
-		string abil;
+{
+private:
+	Dice *dspeed; // dice speed
+	Dice *dhp;    // dice hp
+	Dice *ddam;   // dice dam
 
-		Dice *dspeed;
-		Dice *dhp;
-		Dice *ddam;
-		
-		static MonsterFactory *next(istream &is);
+	char csymb; // char symb
+	int icolor; // int  color
+	int iabil;  // int  abil
+
+public:
+	MonsterFactory();
+	~MonsterFactory();
+
+	string name;
+	string desc;
+	string symb;
+	string color;
+	string speed;
+	string abil;
+	string hp;
+	string dam;
+
+	bool allFieldsFilled();
+
+	static int deleteFactories();
+
+	NPC *generateNPC();
+
+	// generate a random monster from factories
+	static NPC *generateRandNPC();
+
+	// convert all string fields to monster fields
+	int initFields();
+
+	static MonsterFactory *next(istream &is);
+
+	static int load(const char *path);
+
+	static vector<MonsterFactory *> factories;
 };
 
-void init_mf(MonsterFactory* mf);
-int get_color(string);
 ostream &operator<<(ostream &os, MonsterFactory &);
 
 #endif

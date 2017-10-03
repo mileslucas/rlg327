@@ -7,10 +7,9 @@
 
 NPC::NPC() : Character()
 {
-	_isPC = false;
-
-	abil = rand() % 16;
-	speed = 5 + rand() % 16;
+	speed = rand() % 16 + 5;
+	abil  = rand() % 16;
+	hp    = hpmaxNaked = rand() % 16 + 60;
 
 	// get symbol
 	char symb[2];
@@ -21,14 +20,26 @@ NPC::NPC() : Character()
 	mempcy = 0;
 
 	// get color
-	if (100/speed >= 15)
+	if (speed <= 8)
 		color = COLOR_WHITE;
-	else if (100/speed >= 10)
+	else if (speed <= 12)
 		color = COLOR_GREEN;
-	else if (100/speed >= 7)
+	else if (speed <= 16)
 		color = COLOR_CYAN;
-	else if (100/speed >= 5)
+	else
 		color = COLOR_MAGENTA;
+}
+
+NPC::NPC(int speed, int hp, Dice *dam, char symb, int color, int abil, string name, string desc)
+{
+	this->speed = speed;
+	this->hp    = this->hpmaxNaked = hp;
+	this->dam   = dam;
+	this->symb  = symb;
+	this->color = color;
+	this->abil  = abil;
+	this->name  = name;
+	this->desc  = desc;
 }
 
 NPC::~NPC()

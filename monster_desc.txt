@@ -28,7 +28,7 @@ over life.  You may just be her next victim.  You fear for your soul as you
 quake before her malevolent majesty.
 .
 SYMB p
-COLOR BLACK
+COLOR BLACK RED MAGENTA
 ABIL SMART PASS
 DAM 30+5d9
 HP 2999+1d1001
@@ -46,7 +46,7 @@ will avenge the death ofcountless dwarves, re-establish the wealth and power
 of the Misty Mountains and bring peace to the halls of Khazad-dum
 .
 SYMB B
-COLOR RED
+COLOR RED MAGENTA
 SPEED 20+0d1
 ABIL SMART TELE
 HP 100+0d1
@@ -62,7 +62,7 @@ choice, but you are all too aware it would take no more than a flick of
 the wrist for him to shatter every bone in your body.
 .
 SYMB M
-COLOR GREEN
+COLOR GREEN BLUE
 SPEED 4+2d3
 DAM 25+3d6
 HP 500+2d500
@@ -75,7 +75,7 @@ DESC
 Eww...  It's slimy.
 .
 SYMB s
-COLOR GREEN
+COLOR GREEN WHITE CYAN MAGENTA RED YELLOW BLUE
 DAM 0+1d4
 HP 20+0d1
 SPEED 7+1d3
@@ -140,20 +140,31 @@ ABIL SMART TELE TUNNEL
 END
 
 BEGIN MONSTER
-SYMB C
-NAME C++ Program
-NAME Catch this error!
+SYMB p
+COLOR MAGENTA
+NAME Rory Gilmore
 DESC
-Does in one line what it take 200 lines to do in C, but what's taking so
-long?
+All decked out in a brand new Chilton uniform, she talks faster than anybody
+you've ever known.  She's dual-wielding Proust's "Rememberance of Things
+Past" and a half-empty coffee cup; you'd better watch out or she'll hit you
+with a litany of cultural references from which you'll never recover.
 .
-COLOR BLACK
-HP 500+5d100
-SPEED 2+0d1
-DAM 100+9d9
-ABIL SMART TELE TUNNEL
+ABIL SMART ERRATIC
+SPEED 50+0d1
+HP 10+1d10
+DAM 0+1d2
 END
 
 BEGIN MONSTER
-NAME I am an error
+SYMB p
+COLOR BLUE
+NAME Tsukino Usagi
+DESC
+In our world, she's the youma!  Tsukini kawatte oshioki yo, Sailor Moon!
+.
+ABIL ERRATIC TELE
+SPEED 10+0d1
+HP 100+0d1
+DAM 0+3d5
 END
+

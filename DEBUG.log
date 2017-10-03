@@ -2,24 +2,40 @@
      DEBUG     
 ===============
 
-seed: 1478030558
+seed: 1478686682
 save path: (null)
 load path: (null)
 
-generating new dungeon...
+Color of object | is 5
+Color of object | is 1
+Color of object [ is 5
+Color of object \ is 5
+Color of object ] is 7
+Color of object ) is 3
+Color of object ( is 6
+Color of object = is 3
+Color of object _ is 7
+Color of object _ is 7
+Color of object } is 1
+Color of object } is 6
+Color of object } is 2
+generating monsters from factories...
 
-generating monsters...
-
-place NPC 9
-place NPC 6
-place NPC 8
-place NPC b
-place NPC c
-place NPC 5
-place NPC e
-place NPC 9
-place NPC 4
-place NPC 2
+place NPC p
+place NPC C
+place NPC s
+place NPC p
+place NPC C
+place NPC M
+place NPC p
+place NPC s
+place NPC p
+place NPC z
 
 monsters generated.
+
+generating objects from factories...
+
+
+ojbects generated.
 

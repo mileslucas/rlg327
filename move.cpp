@@ -50,9 +50,53 @@ static int scanArea(int x, int y, int radius)
 	return scc;
 }
 
+// get random neighbor floor cell that has no occupied character
+static void getRandEmptyNeighbor(int *nx, int *ny, int x, int y)
+{
+	vector<Point> ns;
+	for (int r=y-1; r<=y+1; r++) {
+		for (int c=x-1; c<=x+1; c++) {
+			if (r>=0 && r<DUNG_H &&
+				c>=0 && c<DUNG_W &&
+				dungeon->hmap[r][c] == 0 &&
+				dungeon->cmap[r][c] == NULL) {
+				Point p(c, r);
+				ns.push_back(p);
+			}
+		}
+	}
+	if (ns.empty()) {
+		*nx = 0;
+		*ny = 0;
+	} else {
+		Point p = ns[rand() % (int)ns.size()];
+		*nx = p.x;
+		*ny = p.y;
+	}
+}
+
+static void swapCharacter(Character *a, Character *b)
+{
+	int ax, ay;
+	a->getLocation(&ax, &ay);
+	
+	int bx, by;
+	b->getLocation(&bx, &by);
+	
+	a->setLocation(bx, by);
+	b->setLocation(ax, ay);
+
+	dungeon->cmap[by][bx] = a;
+	dungeon->cmap[ay][ax] = b;
+}
+
 // move c to the new location (x, y)
 static void update(Character *c, int x, int y)
 {
+	// no move
+	if (c->getX()==x && c->getY()==y)
+		return;
+	
 	if (dungeon->hmap[y][x]) {
 		if (dungeon->hmap[y][x] > 85) {
 			// failed to tunnel
@@ -65,6 +109,43 @@ static void update(Character *c, int x, int y)
 		}
 	}
 	
+	// update what PC is currently attacking (can be NULL) 
+	if (c->isPC())
+		pc->attacking = (NPC *)dungeon->cmap[y][x];
+	
+	if (dungeon->cmap[y][x]) {
+		// attack
+		if (c->isPC() || dungeon->cmap[y][x]->isPC()) {
+			// net damage = total damage - total defense
+			int dam = c->getTotalDam() - dungeon->cmap[y][x]->getTotalDef();
+
+			if (dam < 0) dam = 0;
+					
+			if (dungeon->cmap[y][x]->hp > dam) {
+				// failed to kill
+				dungeon->cmap[y][x]->hp -= dam;
+				return;
+			} else {
+				// kill successfully
+				dungeon->cmap[y][x]->hp = 0;
+			}
+			UI::printHP();
+		} else {
+			// displace targeted monster
+			int nx, ny;
+			getRandEmptyNeighbor(&nx, &ny, x, y);
+			
+			if (nx==0 && ny==0) {
+				// no empty neighbor then swap
+				swapCharacter(c, dungeon->cmap[y][x]);
+				return;
+			} else {
+				// move target to (nx, ny)
+				update(dungeon->cmap[y][x], nx, ny);		
+			}
+		}
+	}
+	
 	int cx, cy;
 	c->getLocation(&cx, &cy);
 	
@@ -74,10 +155,10 @@ static void update(Character *c, int x, int y)
 	// go to new location
 	c->setLocation(x, y);
 	
-	// co:= original character occupied at new location
+	// original character that occupies (x, y)
 	Character *co = dungeon->cmap[y][x];
 	if (co) {
-		if (co->isPC() && invulnerable) {
+		if (co->isPC() && cheat) {
 			c->setDead(); // kill whoever attempted to kill PC
 			return;
 		} else {
@@ -168,7 +249,7 @@ int Move::pcAI()
 	int npcx, npcy;
 	dungeon->npcv[0]->getLocation(&npcx, &npcy);
 	
-	if (invulnerable) {
+	if (cheat) {
 		Dijkstra::run(npcx, npcy, 0);
 		Move::dijkstra(pc, 0);
 	} else {
