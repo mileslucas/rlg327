@@ -52,4 +52,4 @@ The game takes the following command line arguments:
 --sight                         Visualizes the lines of sight for the monsters
 --unify <hex char>              Unifies the monsters as all one type
 --ai                            Let's Yiuxiang's ai take over control of the PC
---numstair <num>                Specifies the number of stairs in the dungeon
+--parse (Optional:)<filepath>   Parses the monster description from the filepath

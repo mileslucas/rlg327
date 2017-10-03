@@ -2,24 +2,22 @@
 #define MOVE_H
 
 #include "core.h"
+#include "npc.h"
 
-/* automatically move NPC */
-int move_npc(Character*);
+class Move
+{
+	public:
+		// move NPC based on its ABIL
+		static int npc(NPC *);
+		// move PC automatically
+		static int pcAI();
+		// move any character
+		static int move(Character *, int, int);
 
-/* automatically move PC (AI) */
-int move_pc();
-
-/* manually move character */
-int move_c(Character*, int, int);
-
-/* choose next move based on distN or distT */
-int move_dijkstra(Character*, int tunneling);
-
-/* choose next move randomly */
-int move_random(Character*, int tunneling);
-
-/* choose next move based on direction of (x, y) */
-int move_toward(Character*, int x, int y, int tunneling);
+		static int dijkstra(Character *, int tunneling);
+		static int random(Character *, int tunneling);
+		static int toward(Character *, int, int, int);
+};
 
 #endif
 

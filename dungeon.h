@@ -1,35 +1,76 @@
-#ifndef DUNGEON_H
-#define DUNGEON_H
+#ifndef DUNG_HH
+#define DUNG_HH
 
-/* load path */
-extern char* loadp;
-/* save path */
-extern char* savep;
+#include <vector>
 
-/* terrain */
-char tmap[DUNG_H][DUNG_W];
+#include "character.h"
+#include "npc.h"
+#include "room.h"
+#include "turn.h"
 
-/* hardness */
-unsigned char hmap[DUNG_H][DUNG_W];
+using namespace std;
 
-/* 1 if display line of sight */
+class Dungeon
+{
+	private:
+		vector<NPC *> deadnpcv;
+
+		int getNPCIndex(NPC *);
+
+	public:
+		// terrain
+		char tmap[DUNG_H][DUNG_W];
+		// hardness
+		unsigned char hmap[DUNG_H][DUNG_W];
+		// characters
+		Character *cmap[DUNG_H][DUNG_W];
+		
+		vector<NPC *> npcv;
+		
+		vector<NPC *> vnpcv; // visible monsters
+		
+		vector<Room *> roomv;
+
+		Turn *turn;
+
+		Dungeon();
+		~Dungeon();
+
+		int fill(char);
+		int generate();
+
+		// true if (x, y) is visible by PC
+		bool isVisible(int x, int y);
+		// true if line of sight is not blocked between two locations
+		bool isVisible(int x, int y, int ox, int oy); 
+
+		inline int nummon() { return  npcv.size(); }
+
+		int removeMonster(NPC *);
+
+		int printDungeon();
+		
+		int placeCharacter(Character *);
+		int placeCharacter(Character *, int x, int y);
+		
+		int load(const char *path);
+		int save(const char *path);
+		
+		// old version - generate 0 ~ f
+		int generateRandMonsters(int nummon);
+
+		// new version - generate from factories
+		int generateMonsters(int nummon);
+		int generateObjects(int numobj);
+
+		int generateObjects(const char *path);
+};
+
+// current active dungeon
+extern Dungeon *dungeon;
+
+// 1 if display line of sight
 extern int sight;
-
-int dungeon_clear();
-
-int dungeon_print();
-
-/* 1.04 returns 1 if there is a line of sight between two points */
-int dungeon_sight(int, int, int, int);
-
-/* 1.02 --load */
-int dungeon_load();
-
-/* 1.02 --save */
-int dungeon_save();
-
-/* 1.01 generate random dungeon */
-int dungeon_generate();
 
 #endif
 

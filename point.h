@@ -1,14 +1,20 @@
 #ifndef POINT_H
 #define POINT_H
 
-typedef struct
+class Point
 {
-	unsigned char x, y;
-} Point;
+	public:
+		int x, y;
 
-Point point(int x, int y);
+		Point() : x(0), y(0) {};
+		Point(int x, int y);
+		~Point();
 
-void point_neighbors(Point neighbors[8], int x, int y);
+		// get a Point without using new
+		static Point getPoint(int x, int y);
+
+		static void neighbors(Point neighbors[8], int x, int y);
+};
 
 #endif
 

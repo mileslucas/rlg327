@@ -2,50 +2,61 @@
 #define CHARACTER_H
 
 #include "core.h"
+#include "dice.h"
+#include "point.h"
 
-#define PC_C 0x10 // PC characteristic
-#define ISPC(cp) (cp->ch & PC_C)
+class Character
+{
+	protected:
+		bool _isPC;
 
-class Character {
-public:
-  char ch;
-  int speed;
-  int x;
-  int y;
-  int mempcx;
-  int mempcy;
-  // 1 if dead
-  int dead;
-  int turn;
+		int _hpmax;
+		int _mpmax;
 
-  Character(int isPC);
-  ~Character();
-  char get_char();
-  int get_color();
-  void place_char();
+		int x, y;
+		
+		bool dead;
+		
+		char symb;
+		
+		int color;
+		int speed;
+		int turn;
 
+	public:
+		Character();
+		virtual ~Character();
+		
+		// getters and setters for (x, y)
+		Point getLocation();
+		void getLocation(int *, int *);
+		virtual void setLocation(int x, int y);
+		inline int getX() { return x; }
+		inline int getY() { return y; }
+		inline void setX(int x) { setLocation(x, y); }
+		inline void setY(int y) { setLocation(x, y); }
+	
+		int getColor();	
+		
+		virtual int hpmax() { return _hpmax; } 
+		virtual int mpmax() { return _mpmax; }
+
+		inline bool isDead() { return dead; }
+		inline void setDead() { dead = true; }
+		
+		// true if this character is PC
+		inline bool isPC() { return _isPC; }
+	
+		// speed
+		virtual int getSpeed() { return speed; }
+		
+		// symbol
+		inline char getSymb() { return symb; } 
+	
+		// turn	
+		inline int  getTurn() { return turn; }
+		inline void setTurn(int turn) { this->turn = turn; }
 };
-
-#ifdef __cplusplus
-extern "C" {
-#endif  
-
-extern Character *pc;
-extern Character *npcs[];
-extern int nummon;
-
-Character *cmap[DUNG_H][DUNG_W];
-
-void* C_create(int isPC);
-void C_delete(Character *c);
-char C_get_char(Character *c);
-int C_get_color(Character *c);
-void C_place_char(Character *c);
-
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif
 

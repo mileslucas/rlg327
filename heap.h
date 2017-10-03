@@ -3,24 +3,25 @@
 
 #define HEAP_BUFFER_SIZE (1<<10)
 
-typedef struct
+class Heap
 {
-	void **heap;
-	int (*comp)(const void*, const void*);
-	int size;
-} Heap;
+	private:
+		void **heap;
+		void swap(int i, int j);
+		void percolateUp(int index);
+		void percolateDown(int index);
 
-/* init heap with a compare method */
-int heap_init(Heap*, int (*compare)(const void*, const void*));
+		int (*comp)(const void *, const void *);
 
-/* delete heap */
-int heap_delete(Heap*);
+	public:
+		int size;
 
-/* insert into heap */
-int heap_insert(Heap*, void*);
+		Heap(int (*compare)(const void*, const void*));
+		~Heap();
 
-/* extract min element, NULL on failure */
-void *heap_extract(Heap*);
+		bool insert(void *);
+		void *extract();
+};
 
 #endif
 

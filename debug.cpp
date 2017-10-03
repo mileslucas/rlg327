@@ -21,19 +21,21 @@ static int init()
 	return 0;
 }
 
-int debug_log(const char *format, ...)
+int Debug::log(const char *format, ...)
 {
 	if (!debug)
 		return 1;
 
-	if (!initDone) {
+	if (!initDone)
+	{
 		init();
 		initDone = 1;
 	}
 
 	FILE *fp = fopen(DEBUG_LOG, "a");
 	
-	if (!fp) {
+	if (!fp)
+	{
 		fprintf(stderr, "debug: failed to open DEBUG.log\n");
 		return 1;
 	}

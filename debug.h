@@ -3,6 +3,10 @@
 
 extern int debug;
 
-int debug_log(const char *, ...);
+class Debug
+{
+	public:
+		static int log(const char *, ...);
+};
 
 #endif

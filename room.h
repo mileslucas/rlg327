@@ -1,32 +1,34 @@
 #ifndef ROOM_H
 #define ROOM_H
 
-#include "point.h"
+class Dungeon;
 
-typedef struct
+class Room
 {
-	unsigned char x, y, w, h;
-} Room;
+	public:
+		unsigned char x, y, w, h;
 
-/* all the rooms that have been added to the dungeon */
-Room rooms[ROOM_MAX_COUNT];
+		Room();
+		~Room();
 
-/* number of rooms */
-int roomc;
+		// true if (x, y) is in room
+		bool contains(int x, int y);
 
-/* get the centroid of the room */
-Point room_centroid(Room);
+		// get the centroid of the room
+		int getCentroid(int *, int *);
 
-/* determine if two rooms are adjacent or overlap */
-int room_collide(Room, Room);
+		// determine if two rooms are adjacent or overlap
+		static bool collide(Room *, Room *);
 
-/* create a new room with random location and size */
-Room room_create();
+		// true if two points are in the same room
+		static bool isInSameRoom(Dungeon *, int x1, int y1, int x2, int y2);
 
-/* place the room on the dungeon */
-void room_place(Room);
+		// paint the room on the dungeon
+		int paintOn(Dungeon *);
 
-void room_randomLocation(int *x, int *y, Room r);
+		// get a random location inside this room
+		int getRandLocation(int *x, int *y);
+};
 
 #endif
 

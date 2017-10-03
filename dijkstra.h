@@ -4,14 +4,22 @@
 #include "core.h"
 #include "point.h"
 
-int distN[DUNG_H][DUNG_W]; // non-tunneling
-int distT[DUNG_H][DUNG_W]; // tunneling
+extern int distN[DUNG_H][DUNG_W]; // non-tunneling
+extern int distT[DUNG_H][DUNG_W]; // tunneling
 
-Point dijkstra_next(int x, int y, int tunneling);
+class Dijkstra
+{
+	private:
+		static int visited[DUNG_H][DUNG_W];
+	
+	public:
+		static Point next(int x, int y, int tunneling);
+		
+		static int print(int tunneling);
 
-int dijkstra_print(int tunneling);
-
-int dijkstra_init(int x, int y, int tunneling);
+		// run Dijkstra to find distance to (x, y)
+		static int run(int x, int y, int tunneling);
+};
 
 #endif
 

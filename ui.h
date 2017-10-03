@@ -1,5 +1,18 @@
-int ui_clearRow(int row);
+#ifndef UI_H
+#define UI_H
 
-int ui_mList();
+class UI
+{
+	public:
+		static int initColors();
 
-int ui_initColor();
+		// called when --help is specified
+		static int help();
+
+		static int clearRow(int row);
+		static int reprint();
+		
+		static int mList();
+};
+
+#endif

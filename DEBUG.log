@@ -2,9 +2,24 @@
      DEBUG     
 ===============
 
-debug: seed: 100
+seed: 1478030558
+save path: (null)
+load path: (null)
 
-debug: save path: (null)
+generating new dungeon...
 
-debug: load path: (null)
+generating monsters...
+
+place NPC 9
+place NPC 6
+place NPC 8
+place NPC b
+place NPC c
+place NPC 5
+place NPC e
+place NPC 9
+place NPC 4
+place NPC 2
+
+monsters generated.
 
