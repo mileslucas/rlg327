@@ -1,41 +1,27 @@
-CC = gcc
-CXX = g++
-ECHO = echo
-RM = rm -f
+CFLAGS = -g -Wall -Werror 
 
-CFLAGS = -Wall -ggdb -funroll-loops
-CXXFLAGS = -Wall -ggdb -funroll-loops
-LDFLAGS = 
+OBJS = \
+corridor.o \
+character.o \
+debug.o \
+dijkstra.o \
+dungeon.o \
+heap.o \
+main.o \
+point.o \
+room.o \
+moves.o \
 
-BIN = rlg327
-OBJS = rlg327.o heap.o
+NAME = rlg327
 
-all: $(BIN) etags
-
-$(BIN): $(OBJS)
-	@$(ECHO) Linking $@
-	@$(CC) $^ -o $@ $(LDFLAGS)
-
--include $(OBJS:.o=.d)
-
-%.o: %.c
-	@$(ECHO) Compiling $<
-	@$(CC) $(CFLAGS) -MMD -MF $*.d -c $<
-
-%.o: %.cpp
-	@$(ECHO) Compiling $<
-	@$(CXX) $(CXXFLAGS) -MMD -MF $*.d -c $<
-
-.PHONY: all clean clobber etags
+all: $(NAME)
 
 clean:
-	@$(ECHO) Removing all generated files
-	@$(RM) *.o $(BIN) *.d TAGS core vgcore.* gmon.out
+	rm -rf $(NAME) *.o $(NAME).dSYM
 
-clobber: clean
-	@$(ECHO) Removing backup files
-	@$(RM) *~ \#* *pgm
+$(NAME): $(OBJS) 
+	gcc $(CFLAGS) -o $(NAME) $(OBJS)
 
-etags:
-	@$(ECHO) Updating TAGS
-	@etags *.[ch]
+%.o: %.c
+	gcc $(CFLAGS) -c $<
+

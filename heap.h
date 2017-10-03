@@ -1,35 +1,26 @@
 #ifndef HEAP_H
-# define HEAP_H
+#define HEAP_H
 
-# ifdef __cplusplus
-extern "C" {
-# endif
+#define HEAP_BUFFER_SIZE (1<<10)
 
-# include <stdint.h>
+typedef struct
+{
+	void **heap;
+	int (*comp)(const void*, const void*);
+	int size;
+} Heap;
 
-struct heap_node;
-typedef struct heap_node heap_node_t;
+/* init heap with a compare method */
+int heap_init(Heap*, int (*compare)(const void*, const void*));
 
-typedef struct heap {
-  heap_node_t *min;
-  uint32_t size;
-  int32_t (*compare)(const void *key, const void *with);
-  void (*datum_delete)(void *);
-} heap_t;
+/* delete heap */
+int heap_delete(Heap*);
 
-void heap_init(heap_t *h,
-               int32_t (*compare)(const void *key, const void *with),
-               void (*datum_delete)(void *));
-void heap_delete(heap_t *h);
-heap_node_t *heap_insert(heap_t *h, void *v);
-void *heap_peek_min(heap_t *h);
-void *heap_remove_min(heap_t *h);
-int heap_combine(heap_t *h, heap_t *h1, heap_t *h2);
-int heap_decrease_key(heap_t *h, heap_node_t *n, void *v);
-int heap_decrease_key_no_replace(heap_t *h, heap_node_t *n);
+/* insert into heap */
+int heap_insert(Heap*, void*);
 
-# ifdef __cplusplus
-}
-# endif
+/* extract min element, NULL on failure */
+void *heap_extract(Heap*);
 
 #endif
+
