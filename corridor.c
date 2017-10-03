@@ -29,14 +29,11 @@ void corridor_connect(Room from, Room to)
 
 	int r = f.y, c = f.x;
 
-	while (r!=t.y && c!=t.x)
-	{	
-		if (tmap[r][c] != ROOM)
-		{
+	while (r!=t.y && c!=t.x) {	
+		if (tmap[r][c] != ROOM) {
 			tmap[r][c] = CORR;
 			hmap[r][c] = 0;
 		}
-
 		// if we connect to existing path, then stop
 		if (numAdjacentCorridors(r, c)>1)
 			break;
@@ -47,14 +44,11 @@ void corridor_connect(Room from, Room to)
 		else
 			r+=incy;
 	}
-	while (r != t.y || c != t.x)
-	{
-		if (tmap[r][c] != ROOM)
-		{
+	while (r != t.y || c != t.x) {
+		if (tmap[r][c] != ROOM) {
 			tmap[r][c] = CORR;
 			hmap[r][c] = 0;
 		}
-
 		// if we connect to existing path, then stop
 		if (numAdjacentCorridors(r, c)>1)
 			break;

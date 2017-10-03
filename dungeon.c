@@ -5,27 +5,28 @@
 #include "dungeon.h"
 #include "room.h"
 
+
 char *loadp = NULL;
 char *savep = NULL;
+
+int sightmap[DUNG_H][DUNG_W]; // for visualization of line of sight
 
 static int initBorder()
 {
 	int r, c;
 
 	// initialize immutable borders
-	for (r=0;r<DUNG_H;r++)
-	{
+	for (r=0;r<DUNG_H;r++) {
 		tmap[r][0] = ROCK;
 		tmap[r][DUNG_W-1] = ROCK;
-			
+
 		hmap[r][0] = IMMUTABLE;
 		hmap[r][DUNG_W-1] = IMMUTABLE;
 	}
-	for (c=0;c<DUNG_W;c++)
-	{
+	for (c=0;c<DUNG_W;c++) {
 		tmap[0][c] = ROCK;
 		tmap[DUNG_H-1][c] = ROCK;
-		
+
 		hmap[0][c] = IMMUTABLE;
 		hmap[DUNG_H-1][c] = IMMUTABLE;
 	}
@@ -35,34 +36,122 @@ static int initBorder()
 
 int dungeon_print()
 {
-	int r, c;
-	
-	for (r=0;r<DUNG_H;r++)
-	{
-		for (c=0;c<DUNG_W;c++)
-		{
-			if (cmap[r][c])
-			{
-				// print character on the tmap
-				printf("%c", cmap[r][c]->c);
-			}
-			else
-			{
-				// print dungeon cell on the dungeon
-				printf("%c", tmap[r][c]);
+	int r, c, i, n;
+
+	init_pair(1, COLOR_RED, COLOR_BLACK);
+	init_pair(2, COLOR_GREEN, COLOR_BLACK);
+	init_pair(3, COLOR_BLUE, COLOR_BLACK);
+	init_pair(4, COLOR_MAGENTA, COLOR_BLACK);
+
+	// Print leading line
+	mvprintw(0, 0, "Number of Monsters Remaining: %2d", nummon);
+	mvprintw(0, 69, "Miles Lucas\n");
+
+	// line of sight visualization
+	if (sight) {	
+		for (r=0; r<DUNG_H; r++) {
+			for (c=0; c<DUNG_W; c++) {
+				// clear old sight map
+				sightmap[r][c] = 0;
 			}
 		}
-		printf("\n");
+		for (i=0; i<nummon; i++) {
+			if (!(0x2 & npcs[i]->c)) {
+				// display line of sight only for non-telepathic monsters
+				dungeon_sight(npcs[i]->x, npcs[i]->y, pc->x, pc->y);
+			}
+		}
 	}
-	
+
+	// print dungeon
+	for (r=0; r<DUNG_H; r++) {
+		for (c=0; c<DUNG_W; c++) {
+			if (cmap[r][c]) {
+				int speed = cmap[r][c]->speed;
+				int ch = character_char(cmap[r][c]);
+
+				if (ISPC(cmap[r][c])){ // if it is PC
+					n = 1;
+				}else if (speed <= 12){
+					n = 2;
+				}else if (speed <= 16){
+					n = 3;
+				}else if (speed <= 20){
+					n = 4;
+				}
+				attron(COLOR_PAIR(n));
+					addch(ch);
+					attroff(COLOR_PAIR(n));
+				
+			} else if (sight && sightmap[r][c]) {
+				// light of sight visualization
+				if (sightmap[r][c] > 0) {
+					attron(COLOR_PAIR(2));
+					addch('o');
+					attroff(COLOR_PAIR(2));;
+				} else {
+					attron(COLOR_PAIR(1));
+					addch('x');
+					attroff(COLOR_PAIR(1));
+				}
+				
+			} else {
+				// print dungeon cell on the dungeon
+				addch(tmap[r][c]);
+			}
+		}
+	}
+	// print trailing two lines
+	mvprintw(22, 0, "A night to remember...\n(m)onsters List \t (Q)uit");
+	// Refresh screen
+	refresh();
 	return 0;
+}
+
+/* 1.04 line of sight */
+int dungeon_sight(int x1, int y1, int x2, int y2)
+{
+	int dx = x2 - x1;
+	int dy = y2 - y1;
+
+	int incx = 0;
+	int incy = 0;
+
+	if (dx > 0) incx =  1;
+	if (dx < 0) incx = -1;
+	if (dy > 0) incy =  1;
+	if (dy < 0) incy = -1;
+
+	int curx = x1;
+	int cury = y1;
+
+	int blocked = 0;
+
+	while (curx!=x2 || cury!=y2) {
+		if (hmap[cury][curx])
+			blocked = 1;
+
+		if (blocked)
+			sightmap[cury][curx] = -1; // -1 means blocked
+		else
+			sightmap[cury][curx] =  1; //  1 means not blocked
+
+		if (ABS(dx)>ABS(dy)) {
+			curx += incx;
+			cury = y1 + (curx - x1) * dy / dx;
+		} else {
+			cury += incy;
+			curx = x1 + (cury - y1) * dx / dy;
+		}
+	}
+	return !blocked;
 }
 
 /* 1.02 --load */
 int dungeon_load()
 {
 	int r, c, i;
-	
+
 	FILE *fp = fopen(loadp, "rb");
 	if(!fp)
 	{
@@ -109,7 +198,7 @@ int dungeon_load()
 
 		room_place(rooms[i]);	
 	}
-	
+
 	fclose(fp);
 
 	return 0;
@@ -119,7 +208,7 @@ int dungeon_load()
 int dungeon_save()
 {
 	int i;
-	
+
 	FILE *fp = fopen(savep, "wb");
 	if(!fp)
 	{
@@ -129,7 +218,7 @@ int dungeon_save()
 
 	// 0-5
 	fwrite("RLG327", 6, 1, fp);
-	
+
 	// 6-13
 	unsigned int buffer[2];
 	buffer[0] = 0;
@@ -138,7 +227,7 @@ int dungeon_save()
 
 	// 14-1693
 	fwrite(hmap, sizeof(hmap), 1, fp);
-	
+
 	// 1694-end
 	for (i=0; i<roomc; i++)
 	{
@@ -147,11 +236,13 @@ int dungeon_save()
 		fwrite(&rooms[i].y, 1, 1, fp);
 		fwrite(&rooms[i].h, 1, 1, fp);
 	}
-	
+
 	fclose(fp);
 
 	return 0;
 }
+
+
 
 /* 1.01 generate random dungeon */
 int dungeon_generate()
@@ -197,7 +288,7 @@ int dungeon_generate()
 		}
 	}
 	roomc = i;
-	
+
 	return 0;
 }
 

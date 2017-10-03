@@ -1,4 +1,5 @@
 CFLAGS = -g -Wall -Werror 
+LDFLAGS = -lncurses
 
 OBJS = \
 corridor.o \
@@ -8,9 +9,10 @@ dijkstra.o \
 dungeon.o \
 heap.o \
 main.o \
+move.o \
 point.o \
 room.o \
-moves.o \
+turn.o \
 
 NAME = rlg327
 
@@ -20,8 +22,7 @@ clean:
 	rm -rf $(NAME) *.o $(NAME).dSYM
 
 $(NAME): $(OBJS) 
-	gcc $(CFLAGS) -o $(NAME) $(OBJS)
+	gcc $(CFLAGS) -o $(NAME) $(OBJS) $(LDFLAGS)
 
 %.o: %.c
 	gcc $(CFLAGS) -c $<
-

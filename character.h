@@ -3,42 +3,53 @@
 
 #include "core.h"
 
+#define PC_C 0x10 // PC characteristic
+#define ISPC(cp) (cp->c & PC_C)
+
 typedef struct
-{
-	// char representation of this character
+{	
+	/* characteristics */
 	char c;
-	unsigned char x, y;
-	char *att;
+
+	/* moving speed */
 	int speed;
-	int move;
+
+	/* character location */
+	int x;
+	int y;
+
+	/* memorized PC location */
+	int mempcx;
+	int mempcy;
+
+	/* 1 if dead */
+	int dead;
+
+	/* next turn */
+	int turn;
 
 } Character;
 
-Character **mons;
-int nmons;
 extern Character *pc;
-int pc_is_alive;
+extern Character *npcs[];
+extern int nummon;
 
-/* character map */
 Character *cmap[DUNG_H][DUNG_W];
 
-/* inits cmap */
-int cmap_init();
-
 /* create a character */
-Character *character_new(char c);
+Character *character_new(int isPC);
 
-/* delete a character */
+/* delete a character and update npcs and nummon */
 int character_delete(Character*);
 
-/* randomly place the character in the dungeon */
+/* char representation of the character */
+char character_char(Character*);
+
+/* randomly place the character on the dungeon */
 int character_place(Character*);
 
-/* moves character in dungeon */
-int character_move(Character*, int, int);
-
-/* places all monsters */
-int place_monsters(int);
+/* prints all the monsters on the dungeon */
+int print_characters(void);
 
 #endif
 

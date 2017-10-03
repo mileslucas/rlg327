@@ -12,13 +12,11 @@ static void swap(Heap *h, int i, int j)
 
 static void percolateUp(Heap *h, int index)
 {
-	while (index>0)
-	{
+	while (index>0) {
 		int p = (index-1)/2;
 		if (h->comp(h->heap[p], h->heap[index]) <= 0)
 			break;
-		else
-		{
+		else {
 			swap(h, p, index);
 			index = p;
 		}
@@ -27,8 +25,7 @@ static void percolateUp(Heap *h, int index)
 
 static void percolateDown(Heap *h, int index)
 {
-	while (index<h->size/2)
-	{
+	while (index<h->size/2) {
 		int l = index*2+1;
 		int r = index*2+2;
 		int imin = index;
@@ -38,8 +35,7 @@ static void percolateDown(Heap *h, int index)
 			imin = r;
 		if (h->comp(h->heap[index], h->heap[imin]) == 0)
 			break;
-		else
-		{
+		else {
 			swap(h, index, imin);
 			index = imin;
 		}
@@ -76,9 +72,8 @@ int heap_insert(Heap *h, void *e)
 void *heap_extract(Heap *h)
 {
 	if (h->size <= 0)
-	{
 		return NULL;
-	}
+	
 	void *tmp = h->heap[0];
 	swap(h, --h->size, 0);
 	percolateDown(h, 0);

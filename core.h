@@ -8,6 +8,7 @@
 #include <sys/types.h> 
 #include <time.h>
 #include <unistd.h>
+#include <ncurses.h>
 
 #define ROCK ' ' /* char for rock */
 #define ROOM '.' /* char for room */
@@ -33,7 +34,9 @@
 #define ABS(x)    (x>0?x:-x)
 #define MAX(x, y) (x>y?x:y)
 #define MIN(x, y) (x<y?x:y)
-#define HEX "0123456789abcdef"
+
+/* 1 if PC can never die */
+extern int cheat;
 
 /* seed for generating random number */
 extern unsigned int seed;
