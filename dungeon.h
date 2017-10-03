@@ -15,6 +15,8 @@ unsigned char hmap[DUNG_H][DUNG_W];
 /* 1 if display line of sight */
 extern int sight;
 
+int dungeon_clear();
+
 int dungeon_print();
 
 /* 1.04 returns 1 if there is a line of sight between two points */

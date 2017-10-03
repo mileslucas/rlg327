@@ -43,3 +43,9 @@ void room_place(Room room)
 	}
 }
 
+void room_randomLocation(int *x, int *y, Room r)
+{
+	*x = r.x + rand() % r.w;
+	*y = r.y + rand() % r.h;
+}
+

@@ -26,5 +26,7 @@ Room room_create();
 /* place the room on the dungeon */
 void room_place(Room);
 
+void room_randomLocation(int *x, int *y, Room r);
+
 #endif
 

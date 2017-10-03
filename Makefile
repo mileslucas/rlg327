@@ -1,9 +1,8 @@
 CFLAGS = -g -Wall -Werror 
-LDFLAGS = -lncurses
 
 OBJS = \
-corridor.o \
 character.o \
+corridor.o \
 debug.o \
 dijkstra.o \
 dungeon.o \
@@ -13,16 +12,18 @@ move.o \
 point.o \
 room.o \
 turn.o \
+ui.o \
+
 
 NAME = rlg327
 
 all: $(NAME)
 
 clean:
-	rm -rf $(NAME) *.o $(NAME).dSYM
+	rm -rf $(NAME) *.o $(NAME).dSYM .DS_Store
 
 $(NAME): $(OBJS) 
-	gcc $(CFLAGS) -o $(NAME) $(OBJS) $(LDFLAGS)
+	g++ $(CFLAGS) -o $(NAME) $(COBJS) -lncurses
 
 %.o: %.c
-	gcc $(CFLAGS) -c $<
+	g++ $(CFLAGS) -c $<

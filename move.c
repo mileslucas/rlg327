@@ -56,7 +56,7 @@ static void update(Character *c, int x, int y)
 	c->x = x;
 	c->y = y;
 
-	// co:= original character occupied at (x, y)
+	// co:= original character occupied at new location
 	Character *co = cmap[c->y][c->x];
 	if (co) {
 		if (ISPC(co) && cheat) {
@@ -104,15 +104,12 @@ int move_npc(Character *c)
 	int tunneling = (4 & c->c);
 	int erratic = (8 & c->c);
 
-	// 1 if this monster can see PC on a line of sight
-	int seePC = dungeon_sight(c->x, c->y, pc->x, pc->y);
-
 	if ((erratic && (rand() & 0x1))) {
 		move_random(c, tunneling);
 	} else if (intelligent && telepathy) {
 		move_dijkstra(c, tunneling);
 	} else if (intelligent) {
-		if (seePC) {
+		if (dungeon_sight(c->x, c->y, pc->x, pc->y)) {
 			// can see PC
 			move_dijkstra(c, tunneling);
 			// memorize location of PC
@@ -124,7 +121,7 @@ int move_npc(Character *c)
 		} else {
 			move_random(c, tunneling);
 		}
-	} else if (telepathy || seePC) {
+	} else if (telepathy) {
 		move_toward(c, pc->x, pc->y, tunneling); 
 	} else {
 		move_random(c, tunneling);
@@ -155,7 +152,7 @@ int move_pc()
 			int mturn = m->turn;
 			for (;pc->turn - 10 <= mturn 
 					&& mturn < pc->turn; mturn+=tpm, mvs++);	
-			int x, y, optx = 0, opty = 0, d;
+			int x, y, optx = 0, opty = 0, d = 0;
 			for (x = pc->x - 1; x <= pc->x + 1; x++) {
 				for (y = pc->y - 1; y <= pc->y + 1; y++) {
 					if (x == pc->x && y == pc->y)

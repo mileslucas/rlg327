@@ -2,63 +2,12 @@
 #include "corridor.h"
 #include "character.h"
 #include "debug.h"
+#include "dijkstra.h"
 #include "dungeon.h"
 #include "move.h"
 #include "room.h"
 #include "turn.h"
-#include "dijkstra.h"
-
-const char *victory =
-  "\n                                       o\n"
-  "                                      $\"\"$o\n"
-  "                                     $\"  $$\n"
-  "                                      $$$$\n"
-  "                                      o \"$o\n"
-  "                                     o\"  \"$\n"
-  "                oo\"$$$\"  oo$\"$ooo   o$    \"$    ooo\"$oo  $$$\"o\n"
-  "   o o o o    oo\"  o\"      \"o    $$o$\"     o o$\"\"  o$      \"$  "
-  "\"oo   o o o o\n"
-  "   \"$o   \"\"$$$\"   $$         $      \"   o   \"\"    o\"         $"
-  "   \"o$$\"    o$$\n"
-  "     \"\"o       o  $          $\"       $$$$$       o          $  ooo"
-  "     o\"\"\n"
-  "        \"o   $$$$o $o       o$        $$$$$\"       $o        \" $$$$"
-  "   o\"\n"
-  "         \"\"o $$$$o  oo o  o$\"         $$$$$\"        \"o o o o\"  "
-  "\"$$$  $\n"
-  "           \"\" \"$\"     \"\"\"\"\"            \"\"$\"            \""
-  "\"\"      \"\"\" \"\n"
-  "            \"oooooooooooooooooooooooooooooooooooooooooooooooooooooo$\n"
-  "             \"$$$$\"$$$$\" $$$$$$$\"$$$$$$ \" \"$$$$$\"$$$$$$\"  $$$\""
-  "\"$$$$\n"
-  "              $$$oo$$$$   $$$$$$o$$$$$$o\" $$$$$$$$$$$$$$ o$$$$o$$$\"\n"
-  "              $\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
-  "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"$\n"
-  "              $\"                                                 \"$\n"
-  "              $\"$\"$\"$\"$\"$\"$\"$\"$\"$\"$\"$\"$\"$\"$\"$\"$\"$\"$\""
-  "$\"$\"$\"$\"$\"$\"$\"$\n"
-  "                                   You win!\n\n";
-
-const char *tombstone =
-  "\n\n\n\n                /\"\"\"\"\"/\"\"\"\"\"\"\".\n"
-  "               /     /         \\             __\n"
-  "              /     /           \\            ||\n"
-  "             /____ /   Rest in   \\           ||\n"
-  "            |     |    Pieces     |          ||\n"
-  "            |     |               |          ||\n"
-  "            |     |   A. Luser    |          ||\n"
-  "            |     |               |          ||\n"
-  "            |     |     * *   * * |         _||_\n"
-  "            |     |     *\\/* *\\/* |        | TT |\n"
-  "            |     |     *_\\_  /   ...\"\"\"\"\"\"| |"
-  "| |.\"\"....\"\"\"\"\"\"\"\".\"\"\n"
-  "            |     |         \\/..\"\"\"\"\"...\"\"\""
-  "\\ || /.\"\"\".......\"\"\"\"...\n"
-  "            |     |....\"\"\"\"\"\"\"........\"\"\"\"\""
-  "\"^^^^\".......\"\"\"\"\"\"\"\"..\"\n"
-  "            |......\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"......"
-  "..\"\"\"\"\"....\"\"\"\"\"..\"\"...\"\"\".\n\n"
-  "            You're dead.  Better luck in the next life.\n\n\n";
+#include "ui.h"
 
 int pcx = 0; // 0 means unset
 int pcy = 0; // 0 means unset
@@ -70,8 +19,6 @@ Character *npcs[1<<10];
 
 char unify = 0;
 
-int ai = 0;
-
 unsigned int seed = 0;
 
 int sight = 0;
@@ -79,84 +26,11 @@ int sight = 0;
 int nummon = 10;
 int nummonmax = 255;
 
-int numstair = 2;
-
-void io_init_terminal(void)
-    {
-      initscr();
-      raw();
-      noecho();
-      curs_set(0);
-      keypad(stdscr, TRUE);
-      start_color();
-    }
-
-/* double checks if someone wants to quit, will only take Y or y for true, anything else will cancel */
-int are_you_sure(void) {
-	mvprintw(22, 0, "Are you sure you want to quit? (Y/N)");
-	refresh();
-	int ch = getch();
-	if (ch == 'Y' || ch == 'y') {
-		return 1;
-	} else {
-		return 0;
-	}
-}
-
-int stairs_place() {
-	int n, x, y;
-	for(n = 0; n < numstair; n++){
-		while (1) {
-			x = rand() % DUNG_W;
-			y = rand() % DUNG_H;
-
-			if (tmap[y][x] == ROOM) {
-				tmap[y][x] = (rand() % 2) ? STAIR_UP : STAIR_DN;
-				break;
-			}
-		}
-	}
-
-	return 0;
-}
-
-int regenerate(void)
-{
-	int n, i, j;
-	dungeon_generate();
-	stairs_place();
-	turn_delete();
-
-	// Clear old cmap;
-	for(i = 0; i < DUNG_H; i++) {
-		for(j = 0; j < DUNG_W; j++) {
-			cmap[i][j] = NULL;
-		}
-	}
-
-	character_place(pc);
-	// init turn heap
-	turn_init();
-	// insert PC into turn heap
-	turn_insert(pc);
-
-	
-
-	// create monsters and insert them into turn heap
-	for (n= 0; n < nummon; n++) {
-		npcs[i] = character_new(0);
-		character_place(npcs[i]);
-		turn_insert(npcs[i]);
-	}
-
-	dungeon_print();
-	return 0;
-}
+int reset(); // reset everything when PC entering a stair
 
 int main(int argc, char** argv)
 {
 	char *home = getenv("HOME");
-
 
 	// make ~/.rlg327 directory
 	char dirpath[strlen(home) + strlen("/.rlg327") + 1];
@@ -262,21 +136,6 @@ int main(int argc, char** argv)
 					fprintf(stderr, "usage: rlg327 --unify <monster>\n");
 					return 1;
 				}
-			}else if (!strcmp("--ai", argv[i]))
-			{
-				ai = 1;
-			}
-			else if (!strcmp("--numstair", argv[i]))
-			{
-				if (i+1<argc)
-				{
-					numstair = atoi(argv[++i]);
-				}
-				else
-				{
-					fprintf(stderr, "usage: rlg327 --numstair <int>\n");
-					return 1;
-				}
 			}
 			// undefined option
 			else
@@ -304,18 +163,7 @@ int main(int argc, char** argv)
 	else
 		dungeon_generate();
 
-	stairs_place();
-	pc = character_new(1);	
-
-	// place PC	
-	if (!pcx && !pcy) {
-		character_place(pc); // randomly place if unset
-	} else {
-		pc->x = pcx;
-		pc->y = pcy;
-
-		cmap[pcy][pcx] = pc;
-	}
+	pc = C_create(1);	
 
 	// init turn heap
 	turn_init();
@@ -324,9 +172,19 @@ int main(int argc, char** argv)
 
 	// create monsters and insert them into turn heap
 	for (i=0; i<nummon; i++) {
-		npcs[i] = character_new(0);
-		character_place(npcs[i]);
+		npcs[i] = C_create(0);
+		C_place_char(npcs[i]);
 		turn_insert(npcs[i]);
+	}
+	
+	// place PC	
+	if (!pcx && !pcy) {
+		C_place_char(pc); // randomly place if unset
+	} else {
+		pc->x = pcx;
+		pc->y = pcy;
+
+		cmap[pcy][pcx] = pc;
 	}
 
 	// unify all monsters to one type
@@ -337,90 +195,151 @@ int main(int argc, char** argv)
 			npcs[i]->c = unifyc;
 	}
 
-	// Initialize ncurses
-	io_init_terminal();
-	int ch;
+	// init distance map
+	dijkstra_init(pc->x, pc->y, 0);
+	dijkstra_init(pc->x, pc->y, 1);
+
+	// ncurses stuff
+	initscr();
+	start_color();
+	raw();
+	noecho();
+	curs_set(0);
+	keypad(stdscr, TRUE);
+
+	ui_initColor();
+
 	// game simulation
 	while (1) {
+		char buffer[100];
+		if (pc->dead)
+			sprintf(buffer, "YOU LOST ! (press Q to quit)");
+		else if (nummon == 0)
+			sprintf(buffer, "YOU WON !! (press Q to quit)");
+		else
+			sprintf(buffer, "%2d MONSTERS LEFT !! (press A to use AI)", 
+					nummon);
+
+		ui_clearRow(DUNG_H+2);
+		mvprintw(DUNG_H+2, 1, "%s", buffer);
+
 		dungeon_print();
 
-		if (pc->dead){
-			clear();
-			printw(tombstone);
-			break; // end of game
-		} else if(!nummon) {
-			clear();
-			printw(victory);
-			break; // end of game
-		}
-		
-		// Input
-		ch = getch();
+		refresh();
 
-		if (ch == 'Q') { // Quit game, don't let monsters move
-			if (are_you_sure()){
-					endwin();
-					exit(0);
-			}
-			continue;
-		} else if (ch == 'm') { // Open monster's list, don't let monsters move
-			print_characters();
-			continue;
+		if (pc->dead || !nummon) {
+			char ch;
+			while ((ch=getch())!='Q' && (ch!='q'));
+			break;
 		}
-		if (ai) {
-			move_pc();
-		} else {
-			if (ch == '7' || ch == 'y') { // Move top left
-				if (move_c(pc, pc->x-1, pc->y-1)) continue;
-			} else if (ch == '8' || ch == 'k') { // Move up
-				if (move_c(pc, pc->x  , pc->y-1)) continue;
-			} else if (ch == '9' || ch == 'u') { // Move top right
-				if (move_c(pc, pc->x+1, pc->y-1)) continue;
-			} else if (ch == '6' || ch == 'l') { // move right
-				if (move_c(pc, pc->x+1, pc->y  )) continue;
-			} else if (ch == '3' || ch == 'n') { // move bottom right
-				if (move_c(pc, pc->x+1, pc->y+1)) continue;
-			} else if (ch == '2' || ch == 'j') { // Move down
-				if (move_c(pc, pc->x  , pc->y+1)) continue;
-			} else if (ch == '1' || ch == 'b') { // Move bottom left
-				if (move_c(pc, pc->x-1, pc->y+1)) continue;
-			} else if (ch == '4' || ch == 'h') { // Move left
-				if (move_c(pc, pc->x-1, pc->y  )) continue;
-			} else if (ch == '>' && STAIR_DN == tmap[pc->y][pc->x]) { // Had code that checked if ch == tmap[pc->y][pc->x]
-				regenerate();
-			
-			} else if (ch == '<' && STAIR_UP == tmap[pc->y][pc->x]) {
-				regenerate();
-			} else if (ch == '5' || ch == ' ') { // Take break
-				// Do nothing
-			} else { // Unrecognized key
-				continue;
-			}
-		} 
 
-		// move monsters
+		int quit = 0;
+
+		int ch = getch();
+
+		// 1 if user does some invalid action 
+		int invalid = 0;
+
+		switch (ch) {
+			case 'Q':
+			case 'q':
+				quit = 1;
+				break;
+			case 'A':
+			case 'a':
+				move_pc(); // automatic
+				break;
+				/* 1.05 */
+			case '7':
+			case 'y':
+				invalid = move_c(pc, pc->x-1, pc->y-1);
+				break;
+			case '8':
+			case 'k':
+				invalid = move_c(pc, pc->x, pc->y-1);
+				break;
+			case '9':
+			case 'u':
+				invalid = move_c(pc, pc->x+1, pc->y-1);
+				break;
+			case '6':
+			case 'l':
+				invalid = move_c(pc, pc->x+1, pc->y);
+				break;
+			case '3':
+			case 'n':
+				invalid = move_c(pc, pc->x+1, pc->y+1);
+				break;
+			case '2':
+			case 'j':
+				invalid = move_c(pc, pc->x, pc->y+1);
+				break;
+			case '1':
+			case 'b':
+				invalid = move_c(pc, pc->x-1, pc->y+1);
+				break;
+			case '4':
+			case 'h':
+				invalid = move_c(pc, pc->x-1, pc->y);
+				break;
+			case '>':
+				if (tmap[pc->y][pc->x]=='>')
+					reset();
+				else
+					invalid = 1;
+				break;
+			case '<':
+				if (tmap[pc->y][pc->x]=='<')
+					reset();
+				else
+					invalid = 1;
+				break;
+			case ' ':
+				break;
+			case 'm':
+				ui_mList();
+				break;
+			case 'S':
+				// case 's':
+				quit = 1;
+				break;
+			default:
+				invalid = 1;
+				break;
+		}
+
+		if (ch == 'm')
+			continue;
+		if (ch == STAIR_UP || ch == STAIR_DN)
+			continue;
+		if (invalid)
+			continue;
+
+		if (quit)
+			break;
+
 		while (1) {
 			Character *c = turn_extract();
 
 			if (c->dead) {
-				character_delete(c);
+				C_delete(c);
 				continue;
 			}
 
 			turn_insert(c);
 
 			if (ISPC(c)) {
-				break; // break on PC turn
+				break;
 			} else {
 				move_npc(c);
-				if (pc->dead){
+				if (pc->dead)
 					break;
-				}
-				
 			}
 		} // end of monsters turn
 	} // end of game simulation
-	refresh();
+
+	endwin();
+
 	turn_delete();
 
 	if (savep)
@@ -430,9 +349,39 @@ int main(int argc, char** argv)
 		free(npcs[i]);
 
 	free(pc);
-	getch();
-	endwin();
 
 	return 0;
 }
 
+int reset() {
+	int i;
+
+	for (i = 0; i < nummon; i++)
+		free(npcs[i]);	
+
+	dungeon_clear();
+	dungeon_generate();
+
+	C_place_char(pc);
+
+	// reset turn	
+	turn_delete();
+	turn_init();
+	pc->turn = 0;
+
+	turn_insert(pc);
+
+	// reset monsters
+	nummon = 10; 
+	for (i=0; i<nummon; i++) {
+		npcs[i] = C_create(0);
+		C_place_char(npcs[i]);
+		turn_insert(npcs[i]);
+	}
+
+	// init distance map
+	dijkstra_init(pc->x, pc->y, 0);
+	dijkstra_init(pc->x, pc->y, 1);
+
+	return 0;
+}

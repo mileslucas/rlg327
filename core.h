@@ -1,6 +1,7 @@
 #ifndef CORE_H
 #define CORE_H
 
+#include <ncurses.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,7 +9,6 @@
 #include <sys/types.h> 
 #include <time.h>
 #include <unistd.h>
-#include <ncurses.h>
 
 #define ROCK ' ' /* char for rock */
 #define ROOM '.' /* char for room */
@@ -31,9 +31,13 @@
 
 #define MARKER "RLG327"
 
-#define ABS(x)    (x>0?x:-x)
-#define MAX(x, y) (x>y?x:y)
-#define MIN(x, y) (x<y?x:y)
+#define COLOR_PC 100
+#define COLOR_HP 200
+#define COLOR_MP 300
+
+#define ABS(x)    ((x)>(0)?(x):-(x))
+#define MAX(x, y) ((x)>(y)?(x):(y))
+#define MIN(x, y) ((x)<(y)?(x):(y))
 
 /* 1 if PC can never die */
 extern int cheat;

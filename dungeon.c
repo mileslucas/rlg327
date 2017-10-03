@@ -2,9 +2,11 @@
 #include "corridor.h"
 #include "character.h"
 #include "debug.h"
+#include "dijkstra.h"
 #include "dungeon.h"
 #include "room.h"
-
+#include "turn.h"
+#include "ui.h"
 
 char *loadp = NULL;
 char *savep = NULL;
@@ -34,18 +36,14 @@ static int initBorder()
 	return 0;
 }
 
+static void print(int r, int c, char ch)
+{
+	mvprintw(r+1, c, "%c", ch);
+}
+
 int dungeon_print()
 {
-	int r, c, i, n;
-
-	init_pair(1, COLOR_RED, COLOR_BLACK);
-	init_pair(2, COLOR_GREEN, COLOR_BLACK);
-	init_pair(3, COLOR_BLUE, COLOR_BLACK);
-	init_pair(4, COLOR_MAGENTA, COLOR_BLACK);
-
-	// Print leading line
-	mvprintw(0, 0, "Number of Monsters Remaining: %2d", nummon);
-	mvprintw(0, 69, "Miles Lucas\n");
+	int r, c, i;
 
 	// line of sight visualization
 	if (sight) {	
@@ -63,48 +61,45 @@ int dungeon_print()
 		}
 	}
 
-	// print dungeon
-	for (r=0; r<DUNG_H; r++) {
-		for (c=0; c<DUNG_W; c++) {
+	for (r=0;r<DUNG_H;r++) {
+		for (c=0;c<DUNG_W;c++) {
+			int color = 0;
 			if (cmap[r][c]) {
-				int speed = cmap[r][c]->speed;
-				int ch = character_char(cmap[r][c]);
+				color = character_color(cmap[r][c]);
+				attron(COLOR_PAIR(color));
 
-				if (ISPC(cmap[r][c])){ // if it is PC
-					n = 1;
-				}else if (speed <= 12){
-					n = 2;
-				}else if (speed <= 16){
-					n = 3;
-				}else if (speed <= 20){
-					n = 4;
-				}
-				attron(COLOR_PAIR(n));
-					addch(ch);
-					attroff(COLOR_PAIR(n));
-				
+				// print character on the tmap
+				print(r, c, character_char(cmap[r][c]));
+				attroff(COLOR_PAIR(color));
 			} else if (sight && sightmap[r][c]) {
 				// light of sight visualization
-				if (sightmap[r][c] > 0) {
-					attron(COLOR_PAIR(2));
-					addch('o');
-					attroff(COLOR_PAIR(2));;
+				if (sightmap[r][c] > 0) {	
+					attron(COLOR_PAIR(color = COLOR_GREEN));
+					print(r, c, 'o');
 				} else {
-					attron(COLOR_PAIR(1));
-					addch('x');
-					attroff(COLOR_PAIR(1));
+					attron(COLOR_PAIR(color = COLOR_RED));
+					print(r, c, 'x');
 				}
-				
+				attroff(COLOR_PAIR(color));
 			} else {
 				// print dungeon cell on the dungeon
-				addch(tmap[r][c]);
+				print(r, c, tmap[r][c]);
 			}
 		}
 	}
-	// print trailing two lines
-	mvprintw(22, 0, "A night to remember...\n(m)onsters List \t (Q)uit");
-	// Refresh screen
-	refresh();
+
+	return 0;
+}
+
+int dungeon_clear()
+{
+	int r, c;
+
+	for (r=0; r<DUNG_H; r++) {
+		for (c=0; c<DUNG_W; c++) {
+			cmap[r][c] = NULL;
+		}
+	}
 	return 0;
 }
 
@@ -242,8 +237,6 @@ int dungeon_save()
 	return 0;
 }
 
-
-
 /* 1.01 generate random dungeon */
 int dungeon_generate()
 {
@@ -288,6 +281,13 @@ int dungeon_generate()
 		}
 	}
 	roomc = i;
+
+	// place stairs
+	int x, y;
+	room_randomLocation(&x, &y, rooms[0]);
+	tmap[y][x] = STAIR_UP;
+	room_randomLocation(&x, &y, rooms[1]);
+	tmap[y][x] = STAIR_DN;
 
 	return 0;
 }
