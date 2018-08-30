@@ -1,15 +1,12 @@
+# User Manual
 
-===========
-User Manual
-===========
-
-NAME
+## NAME
 	rlg327 -- rogue like game
 
-SYNOPSIS
+## SYNOPSIS
 	rlg327 [options]
 
-DESCRIPTION
+## DESCRIPTION
 	When program is executed, a randomly generated dungeon of size 21 * 80 
 	will be displayed, and a player character '@' will be moving around to 
 	find monsters to fight!
